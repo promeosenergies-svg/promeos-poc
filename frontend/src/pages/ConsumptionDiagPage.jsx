@@ -5,15 +5,10 @@
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RTooltip,
-  ResponsiveContainer,
-} from 'recharts';
+// Sprint Énergie P0.S1b (2026-05-29) — imports Recharts retirés : la
+// dernière utilisation (chart Evidence baseline vs actual synthétique)
+// a été supprimée. À ré-importer si l'endpoint backend profile_24h
+// est ajouté en P1.S3.
 // Énergie P0b visual credibility (2026-05-27, brief C5) — icônes lucide
 // remplacent les emojis utilisés dans LEVER_ICONS (rendus en label visible
 // dans la liste des leviers flex/conso).
@@ -53,6 +48,13 @@ import { toConsoExplorer, toMonitoring, toUsages, toBillIntel } from '../service
 import usePeriodParams from '../hooks/usePeriodParams';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import { useElecCo2Factor } from '../contexts/EmissionFactorsContext';
+// Sprint Énergie P0.S1b (2026-05-29) — helper canonique unique pour
+// conversion kWh → kgCO₂eq. Facteur ADEME V23.6 fourni par backend.
+import { kwhToCo2Kg } from '../utils/co2';
+// Sprint Énergie P1.S2b (2026-05-29) — agrégations post-filtre scope FE
+// déplacées dans un helper whitelisté (cf. doctrine in-file). Migration
+// cible : /api/energy/synthesis.kpis.estimated_impact_eur (P1.S3).
+import { sumInsightsLossEur, sumInsightsLossKwh } from '../utils/scopedAggregates';
 import {
   Zap,
   Info,
@@ -116,49 +118,39 @@ export function computeSummaryFromInsights(insights) {
       total_loss_eur: 0,
       by_type: {},
     };
+  // Sprint Énergie P1.S2b — agrégations post-filtre scope FE via helpers
+  // whitelistés `sumInsightsLossEur` / `sumInsightsLossKwh`. À remplacer
+  // P1.S3 par /api/energy/synthesis.kpis.estimated_impact_eur dès que le
+  // backend acceptera site_id + insight_status query params.
+  const byType = {};
+  for (const i of insights) {
+    byType[i.type] = (byType[i.type] || 0) + 1;
+  }
   return {
     total_insights: insights.length,
     sites_with_insights: new Set(insights.map((i) => i.site_id).filter(Boolean)).size,
-    total_loss_kwh: insights.reduce((s, i) => s + (i.estimated_loss_kwh || 0), 0),
-    total_loss_eur: insights.reduce((s, i) => s + (i.estimated_loss_eur || 0), 0),
-    by_type: insights.reduce((acc, i) => ({ ...acc, [i.type]: (acc[i.type] || 0) + 1 }), {}),
+    total_loss_kwh: sumInsightsLossKwh(insights),
+    total_loss_eur: sumInsightsLossEur(insights),
+    by_type: byType,
   };
 }
 
-export function generateComparisonChart(insight) {
-  const type = insight.type;
-  const excessKwh = insight.estimated_loss_kwh || 100;
-  const seed = insight.id || 1;
-  const data = [];
-
-  for (let h = 0; h < 24; h++) {
-    const isOffice = h >= 8 && h <= 19;
-    const baseline = isOffice ? 40 + Math.sin(((h - 8) / 11) * Math.PI) * 30 : 8;
-
-    let actual = baseline;
-    // Deterministic pseudo-random based on seed + hour
-    const noise = (((seed * 31 + h * 17) % 100) / 100) * 3;
-
-    if (type === 'hors_horaires' && !isOffice) {
-      actual = baseline + (excessKwh / 14) * 0.8 + noise;
-    } else if (type === 'base_load') {
-      actual = baseline + (excessKwh / 24) * 0.3 + noise * 0.5;
-    } else if (type === 'pointe' && h >= 10 && h <= 14) {
-      actual = baseline + excessKwh / 4 + noise * 2;
-    } else if (type === 'derive') {
-      actual = baseline * (1 + excessKwh / 500) + noise;
-    } else {
-      actual = baseline + noise * 0.3;
-    }
-
-    data.push({
-      hour: `${h}h`,
-      baseline: Math.round(baseline * 10) / 10,
-      actual: Math.round(actual * 10) / 10,
-    });
-  }
-  return data;
-}
+// Sprint Énergie P0.S1b (2026-05-29) — DELETED `generateComparisonChart`.
+//
+// Cette fonction générait 24 points synthétiques sinusoïdaux (Math.sin)
+// pour le chart Evidence du drawer Diagnostic — violation doctrine
+// « zéro calcul métier frontend » + données fausses présentées comme
+// vraies (anti-confiance DAF si découverte).
+//
+// Le chart est remplacé par un EmptyState dans EvidenceTab. La valeur
+// métier (kWh excès + € impact + CO₂) reste affichée dans le drawer
+// (cf. lignes 720+ du composant InsightDrawer).
+//
+// Migration cible : exposer un endpoint
+//   GET /api/diagnostic-conso/insights/{id}/profile_24h
+// qui retourne les VRAIES données MeterReading du site sur la période
+// de l'insight, ou un seed démo backend explicite (jamais synthétique
+// frontend). Planifié P1.S3 (vue Courbe de charge analysable).
 
 // ---- Sub-components ----
 
@@ -226,7 +218,9 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-400">CO₂e évitable</p>
-              <p className="text-lg font-bold text-emerald-600">{fmtCo2(totalKwh * co2Factor)}</p>
+              <p className="text-lg font-bold text-emerald-600">
+                {fmtCo2(kwhToCo2Kg(totalKwh, co2Factor))}
+              </p>
             </div>
           </div>
         </div>
@@ -244,7 +238,7 @@ function SummaryCards({ summary, customPrice }) {
       ? recalcLosses(summary.total_loss_kwh, customPrice, defaultPrice)
       : Math.round(summary.total_loss_eur || 0);
 
-  const totalCo2eKg = Math.round((summary.total_loss_kwh || 0) * co2Factor);
+  const totalCo2eKg = kwhToCo2Kg(summary.total_loss_kwh || 0, co2Factor);
   const cards = [
     {
       label: 'Analyses détectées',
@@ -360,7 +354,9 @@ function InsightRow({ insight, onRowClick, onCreateAction }) {
         {insight.estimated_loss_kwh ? fmtKwh(Math.round(insight.estimated_loss_kwh)) : '—'}
       </td>
       <td className="py-3 px-4 text-sm text-right text-emerald-600">
-        {insight.estimated_loss_kwh ? fmtCo2(insight.estimated_loss_kwh * co2Factor) : '—'}
+        {insight.estimated_loss_kwh
+          ? fmtCo2(kwhToCo2Kg(insight.estimated_loss_kwh, co2Factor))
+          : '—'}
       </td>
       <td className="py-3 px-4 text-sm text-center">
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>
@@ -569,7 +565,7 @@ function EvidenceDrawer({
               {insight.estimated_loss_kwh > 0 && insight.estimated_loss_eur > 0 && ' · '}
               {insight.estimated_loss_eur > 0 && fmtEur(Math.round(insight.estimated_loss_eur))}
               {' · '}
-              {fmtCo2(insight.estimated_loss_kwh * co2Factor)}
+              {fmtCo2(kwhToCo2Kg(insight.estimated_loss_kwh, co2Factor))}
             </span>
           )}
         </div>
@@ -696,43 +692,40 @@ function EvidenceDrawer({
 
 function EvidenceTab({ insight }) {
   const co2Factor = useElecCo2Factor();
-  const chartData = useMemo(() => generateComparisonChart(insight), [insight]);
+  // Sprint Énergie P0.S1b (2026-05-29) — chart de comparaison baseline
+  // vs actual désactivé (générait des données synthétiques sinusoïdales
+  // côté frontend, violation doctrine). Remplacement par placeholder
+  // explicite. La valeur métier (kWh / € / CO₂) reste affichée ci-dessous.
+  // Migration : endpoint /api/diagnostic-conso/insights/{id}/profile_24h
+  // planifié P1.S3 (vue Courbe de charge analysable).
   return (
     <div className="space-y-4">
       <div className="bg-gray-50 rounded-lg p-3">
         <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
           Profil type : consommation observée vs référence
         </h4>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
-            <YAxis tick={{ fontSize: 10 }} unit=" kW" />
-            <RTooltip />
-            <Area
-              type="monotone"
-              dataKey="baseline"
-              stroke="#94a3b8"
-              fill="#e2e8f0"
-              name="Référence"
-            />
-            <Area
-              type="monotone"
-              dataKey="actual"
-              stroke="#ef4444"
-              fill="#fee2e2"
-              fillOpacity={0.5}
-              name="Observée"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div
+          className="flex flex-col items-center justify-center text-center py-8 px-4 bg-white rounded border border-dashed border-gray-200"
+          role="status"
+          aria-label="Profil de comparaison indisponible"
+          data-testid="evidence-profile-placeholder"
+        >
+          <Info size={20} className="text-gray-400 mb-2" aria-hidden="true" />
+          <p className="text-sm font-medium text-gray-600">
+            Profil détaillé temporairement indisponible
+          </p>
+          <p className="text-xs text-gray-500 mt-1 max-w-sm">
+            Le rendu 24 h baseline vs observé est en cours de migration vers les données réelles
+            (CDC site). Le chiffrage de l’impact reste fiable ci-dessous.
+          </p>
+        </div>
         {insight.estimated_loss_kwh > 0 && (
           <p className="text-xs text-gray-500 mt-1">
             Écart : +{fmtKwh(insight.estimated_loss_kwh)}
             {insight.estimated_loss_eur > 0 &&
               ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
             {' · '}
-            {fmtCo2(insight.estimated_loss_kwh * co2Factor)}
+            {fmtCo2(kwhToCo2Kg(insight.estimated_loss_kwh, co2Factor))}
           </p>
         )}
       </div>
@@ -1027,8 +1020,24 @@ export default function ConsumptionDiagPage() {
           € leviers + plan d'actions priorisé. Sert Marie DAF (économies
           cachées) + Energy Manager (priorisation) + Investisseur. */}
       {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead. */}
+      {/* Sprint Énergie P0.S1a (2026-05-29, brief P0 #2 résiduel) — quand
+          il n'y a aucune anomalie détectée (summary === null ou
+          total_insights === 0), on omet les 3 KPI hero du briefing.
+          Sans ce filtre, SolNarrative rend systématiquement les 3 tuiles
+          « 0 anomalie / 0 € / 0 € » même en présence de l'EmptyState
+          « Aucun gisement détecté » → message contradictoire, anti-
+          confiance DAF (cf. brief C3 P0b + brief sprint correction).
+          Le briefing texte (kicker/title/italicHook/narrative) reste
+          rendu — seules les tuiles chiffrées sont masquées. */}
       <SolBriefingHead
-        briefing={solBriefing}
+        briefing={
+          solBriefing &&
+          (!summary || (summary?.total_insights ?? 0) === 0) &&
+          Array.isArray(solBriefing.kpis) &&
+          solBriefing.kpis.length > 0
+            ? { ...solBriefing, kpis: [] }
+            : solBriefing
+        }
         error={solBriefingError}
         onRetry={solBriefingRefetch}
         omitHeader

@@ -36,18 +36,37 @@ from services.error_catalog import business_error
 router = APIRouter(prefix="/api/monitoring", tags=["Monitoring"])
 
 
-# Énergie P0b visual credibility (2026-05-27, brief C1) — helper de clamp
-# défensif pour les snapshots Monitoring. Garantit que `data_quality_score`
-# et `risk_power_score` exposés au FE restent dans [0, 100], même si un
-# snapshot legacy a persisté un score > 100 avant le fix orchestrator.
-def _clamp_monitoring_score(raw):
-    """Clamp un score Monitoring sur [0, 100] avec tolérance None / cast."""
-    if raw is None:
-        return None
-    try:
-        return max(0, min(100, round(float(raw))))
-    except (TypeError, ValueError):
-        return 0
+# Énergie P0b visual credibility (2026-05-27, brief C1) + P0.S1a (2026-05-29) —
+# helper de clamp défensif pour les snapshots Monitoring. Garantit que
+# `data_quality_score` et `risk_power_score` exposés au FE restent dans
+# [0, 100], même si un snapshot legacy a persisté un score > 100 avant le
+# fix orchestrator. Délégation à l'utilitaire canonique partagé.
+from services.electric_monitoring.score_utils import clamp_score_0_100 as _clamp_monitoring_score  # noqa: E402
+
+
+# Sprint Énergie P0.S1a (2026-05-29, brief P0 #1 résiduel) — le top-level
+# `data_quality_score` était déjà clampé depuis brief C1, mais le frontend
+# MonitoringPage:1841 pioche `kpis?.data_quality_score` (sub-objet
+# kpis_json). Ce dict provient de KPIEngine.compute() et n'était PAS
+# clampé en sortie API → le bug « 108/100 » persistait à l'affichage.
+# Cette fonction garantit que TOUT champ score connu dans le sub-objet
+# kpis est aussi clampé. À appliquer sur kpis, kpis/compare, snapshots.
+_KPIS_DICT_SCORE_FIELDS = ("data_quality_score", "risk_power_score")
+
+
+def _clamp_kpis_scores(kpis_json: dict) -> dict:
+    """Clamp les champs score connus dans un dict kpis_json (sub-objet).
+
+    Retourne une copie shallow avec les scores [0, 100]. Si une clé est
+    absente, elle reste absente (ne crée pas de None artificiel).
+    """
+    if not kpis_json:
+        return {}
+    out = dict(kpis_json)
+    for k in _KPIS_DICT_SCORE_FIELDS:
+        if k in out:
+            out[k] = _clamp_monitoring_score(out[k])
+    return out
 
 
 # --- Pydantic models ---
@@ -147,6 +166,49 @@ def get_monitoring_kpis(
                 else:
                     readings = [{"timestamp": r.timestamp, "value_kwh": r.value_kwh} for r in readings_orm]
                     climate_data = ClimateEngine().compute(readings, weather)
+                    # Sprint Énergie P0.S1c (2026-05-29, brief P1) — pré-calcul
+                    # backend des bornes outliers pour ClimateScatter UI. Le
+                    # frontend `MonitoringPage:_filterOutliers` faisait
+                    # `Math.floor(length * 0.25)` côté JS (violation doctrine).
+                    # On expose désormais `outlier_bounds: {lower, upper}` +
+                    # `quantiles: {q1, median, q3}` pré-calculés via le SoT
+                    # canonique `consumption_granularity_service.compute_quantiles`
+                    # (interpolation linéaire numpy-compat). Le FE n'a plus qu'à
+                    # appliquer un filter pur (p.kwh >= lower && p.kwh <= upper)
+                    # qui est une comparaison d'affichage, pas un calcul métier.
+                    try:
+                        scatter = climate_data.get("scatter") or []
+                        if scatter and len(scatter) >= 5:
+                            from services.consumption_granularity_service import compute_quantiles
+
+                            kwh_values = [p.get("kwh") for p in scatter if p.get("kwh") is not None]
+                            qs = compute_quantiles(kwh_values, qs=[0.25, 0.5, 0.75])
+                            q1 = qs.get("p25")
+                            q3 = qs.get("p75")
+                            iqr = qs.get("iqr") or 0.0
+                            climate_data["quantiles"] = {
+                                "q1": q1,
+                                "median": qs.get("p50"),
+                                "q3": q3,
+                                "iqr": iqr,
+                                "n": qs.get("n"),
+                            }
+                            if q1 is not None and q3 is not None:
+                                climate_data["outlier_bounds"] = {
+                                    "lower": round(q1 - 3 * iqr, 6),
+                                    "upper": round(q3 + 3 * iqr, 6),
+                                    "method": "tukey_3xIQR",
+                                }
+                                climate_data["provenance"] = {
+                                    "source": "MeterReading via ClimateEngine",
+                                    "formula": "linear interpolation percentile (Tukey 3·IQR)",
+                                    "period": (f"{snapshot.period_start.date()} → {snapshot.period_end.date()}"),
+                                    "service": "consumption_granularity_service.compute_quantiles",
+                                    "n_points": len(kwh_values),
+                                }
+                    except Exception:  # noqa: BLE001 — sécurité défensive payload
+                        # Pas de blocage du payload principal si bornes échouent.
+                        pass
     except Exception as e:
         climate_data = {"reason": "computation_error", "scatter": [], "fit_line": [], "error_detail": str(e)[:200]}
 
@@ -204,7 +266,10 @@ def get_monitoring_kpis(
         "site_id": snapshot.site_id,
         "meter_id": snapshot.meter_id,
         "period": f"{snapshot.period_start.date()} - {snapshot.period_end.date()}",
-        "kpis": snapshot.kpis_json or {},
+        # P0.S1a : clamp aussi les scores DANS le sub-objet kpis (FE lit
+        # `kpis?.data_quality_score` en MonitoringPage:1841, pas le
+        # top-level).
+        "kpis": _clamp_kpis_scores(snapshot.kpis_json or {}),
         # Énergie P0b visual credibility (2026-05-27, brief C1) — defense-in-
         # depth : clamp à la lecture pour les snapshots legacy persistés avant
         # le fix orchestrator. Garantit 0 ≤ score ≤ 100 côté payload.
@@ -326,7 +391,8 @@ def get_monitoring_kpis_compare(
         "compare": {
             "snapshot_id": compare_snapshot.id,
             "period": f"{compare_snapshot.period_start.date()} - {compare_snapshot.period_end.date()}",
-            "kpis": compare_snapshot.kpis_json or {},
+            # P0.S1a : clamp aussi scores DANS sub-objet kpis (cf. note kpis route).
+            "kpis": _clamp_kpis_scores(compare_snapshot.kpis_json or {}),
             # Énergie P0b visual credibility (2026-05-27, brief C1) — clamp.
             "data_quality_score": _clamp_monitoring_score(compare_snapshot.data_quality_score),
             "risk_power_score": _clamp_monitoring_score(compare_snapshot.risk_power_score),

@@ -36,7 +36,9 @@ import StickyFilterBar from './consumption/StickyFilterBar';
 import ContextBanner from './consumption/ContextBanner';
 import InsightsStrip from './consumption/InsightsStrip';
 import { computeAutoRange } from './consumption/helpers';
-import { computeInsights } from './consumption/insightRules';
+// Sprint Énergie P0.S1c (2026-05-29) — computeInsights migré vers backend
+// (services.explorer_insights_service.build_explorer_insights). FE
+// consomme insights via getExplorerInsights() avec hook useEffect.
 import useExplorerMotor from './consumption/useExplorerMotor';
 import useExplorerURL from './consumption/useExplorerURL';
 import useExplorerPresets from './consumption/useExplorerPresets';
@@ -44,6 +46,9 @@ import useExplorerMode from './consumption/useExplorerMode';
 import PortfolioPanel from './consumption/PortfolioPanel';
 import { MAX_SITES, nonApplicableTabs } from './consumption/types';
 import { useElecCo2Factor } from '../contexts/EmissionFactorsContext';
+// Sprint Énergie P0.S1b (2026-05-29) — helper canonique unique pour
+// conversion kWh → kgCO₂eq. Facteur ADEME V23.6 fourni par backend.
+import { kwhToCo2Kg } from '../utils/co2';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
 import SignaturePanel from './consumption/SignaturePanel';
 import { fmtCo2, fmtKwh } from '../utils/format';
@@ -59,6 +64,8 @@ import HierarchyPanel from './consumption/HierarchyPanel';
 import CDCViewerPanel from './consumption/CDCViewerPanel';
 import DataQualityPanel from './consumption/DataQualityPanel';
 import { generateEmsReport } from '../services/api/ems';
+// Sprint Énergie P0.S1c — SoT canonique insights Explorer (backend).
+import { getExplorerInsights } from '../services/api/energy';
 import { evidenceKwhTotal, evidenceCO2e } from '../ui/evidence.fixtures';
 import { toConsoDiag, toMonitoring } from '../services/routes';
 
@@ -372,6 +379,42 @@ export default function ConsumptionExplorerPage() {
     }
   }, [isPortfolioMode, sites, selectedSiteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Sprint Énergie P0.S1c (2026-05-29) — insights Explorer backend ───
+  // Remplace computeInsights frontend (insightRules.js) par appel SoT
+  // backend. Le hook re-fetch quand les payloads panels changent.
+  const [explorerInsights, setExplorerInsights] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    const motorData = {
+      primaryTunnel: motor.primaryTunnel,
+      primaryHphc: motor.primaryHphc,
+      primaryGas: motor.primaryGas,
+      primaryWeather: motor.primaryWeather,
+      primaryProgression: motor.primaryProgression,
+    };
+    const allEmpty = Object.values(motorData).every((v) => v == null);
+    if (allEmpty) {
+      setExplorerInsights([]);
+      return undefined;
+    }
+    getExplorerInsights(motorData)
+      .then((list) => {
+        if (!cancelled) setExplorerInsights(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setExplorerInsights([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    motor.primaryTunnel,
+    motor.primaryHphc,
+    motor.primaryGas,
+    motor.primaryWeather,
+    motor.primaryProgression,
+  ]);
+
   // ── Custom date range (V11.1-A) ────────────────────────────────────────
   // ── Evidence Drawer ("Pourquoi ce chiffre ?") ─────────────────────────
   const [evidenceKpiOpen, setEvidenceKpiOpen] = useState(null);
@@ -381,7 +424,8 @@ export default function ConsumptionExplorerPage() {
     const totalKwh = hphc?.total_kwh ?? motor.primaryTunnel?.total_kwh ?? null;
     const kwhStr = totalKwh != null ? fmtKwh(totalKwh) : null;
     // Facteur CO₂ via EmissionFactorsContext (source unique backend/config/emission_factors.py)
-    const co2Kg = totalKwh != null ? Math.round(totalKwh * co2Factor) : null;
+    // P0.S1b : conversion via helper canonique utils/co2.kwhToCo2Kg.
+    const co2Kg = kwhToCo2Kg(totalKwh, co2Factor);
     const co2Str = co2Kg != null ? fmtCo2(co2Kg) : null;
     return {
       'conso-kwh-total': evidenceKwhTotal(scopeLabel, periodStr, kwhStr),
@@ -638,8 +682,14 @@ export default function ConsumptionExplorerPage() {
   return (
     <div className="space-y-3">
       {/* Page header + scope badge + cross-nav — compact single row (#90) */}
+      {/* Sprint Énergie P0.S1a (2026-05-29, brief P0 #5) — hiérarchie h1
+          rehaussée text-base → text-xl pour respecter la table d'autorité
+          typographique (h1 = principal de page, pas un sous-titre). Avant,
+          la h1 « Explorateur de consommation » était rendue en `text-base
+          font-semibold` (16px) — visuellement inférieure aux h2 de panels
+          internes (text-lg font-bold = 18px), inversion de hiérarchie. */}
       <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+        <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <BarChart3 size={18} className="text-blue-600" />
           Explorateur de consommation
         </h1>
@@ -871,22 +921,11 @@ export default function ConsumptionExplorerPage() {
                 )}
               </div>
 
-              {/* InsightsStrip — only when data ready */}
-              {showContent && (
-                <InsightsStrip
-                  insights={computeInsights(
-                    {
-                      primaryTunnel: motor.primaryTunnel,
-                      primaryHphc: motor.primaryHphc,
-                      primaryGas: motor.primaryGas,
-                      primaryWeather: motor.primaryWeather,
-                      primaryProgression: motor.primaryProgression,
-                    },
-                    mode,
-                    unit
-                  )}
-                />
-              )}
+              {/* InsightsStrip — only when data ready.
+                  P0.S1c — `explorerInsights` provient désormais du backend
+                  SoT canonique `explorer_insights_service.build_explorer_insights`
+                  (cf. hook `useEffect` plus haut + getExplorerInsights). */}
+              {showContent && <InsightsStrip insights={explorerInsights} />}
 
               {/* Panel content */}
               <div>

@@ -362,6 +362,105 @@ def get_org_baseline_daily_kwh_dju_adjusted(
     }
 
 
+def compute_quantiles(
+    values: list[float],
+    qs: list[float] | None = None,
+) -> dict[str, float | None]:
+    """Calcule les quantiles statistiques d'une série de valeurs numériques.
+
+    Sprint Énergie P0.S1b (2026-05-29, brief P3) — SoT canonique des
+    quartiles Q1/Q3 et médiane, à substituer au calcul frontend
+    `MonitoringPage.jsx:_filterOutliers` qui faisait
+    `Math.floor(length * 0.25)` côté JS (violation doctrine
+    « zéro calcul métier frontend »).
+
+    Méthode : interpolation linéaire entre les rangs (équivalent
+    `numpy.quantile` avec method='linear'). Plus précis que la
+    sélection par index `Math.floor` utilisée frontend.
+
+    Args:
+        values: liste de valeurs numériques (None et NaN ignorés).
+        qs: liste de quantiles à calculer dans [0, 1]. Défaut
+            [0.25, 0.5, 0.75] (Q1, médiane, Q3).
+
+    Returns:
+        Dict {label: value} avec clés standardisées :
+        - "p25" (alias Q1) si 0.25 demandé
+        - "p50" (alias médiane) si 0.5 demandé
+        - "p75" (alias Q3) si 0.75 demandé
+        - Pour autres quantiles, clé = f"p{int(q*100)}"
+        - "n" : taille de la population filtrée
+        - "iqr" : Q3 - Q1 (si Q1 et Q3 demandés)
+
+        Valeurs `None` si population vide.
+
+    Examples:
+        >>> compute_quantiles([1, 2, 3, 4, 5])
+        {'p25': 2.0, 'p50': 3.0, 'p75': 4.0, 'n': 5, 'iqr': 2.0}
+        >>> compute_quantiles([])
+        {'p25': None, 'p50': None, 'p75': None, 'n': 0, 'iqr': None}
+        >>> compute_quantiles([10])
+        {'p25': 10.0, 'p50': 10.0, 'p75': 10.0, 'n': 1, 'iqr': 0.0}
+    """
+    import math
+
+    if qs is None:
+        qs = [0.25, 0.5, 0.75]
+
+    # Sanitize : retirer None / NaN / non-numérique
+    clean: list[float] = []
+    for v in values or []:
+        if v is None:
+            continue
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            continue
+        if math.isnan(f) or math.isinf(f):
+            continue
+        clean.append(f)
+
+    n = len(clean)
+    out: dict[str, float | None] = {"n": n}
+
+    if n == 0:
+        for q in qs:
+            out[_q_label(q)] = None
+        if 0.25 in qs and 0.75 in qs:
+            out["iqr"] = None
+        return out
+
+    sorted_vals = sorted(clean)
+
+    for q in qs:
+        if not 0.0 <= q <= 1.0:
+            out[_q_label(q)] = None
+            continue
+        out[_q_label(q)] = _quantile_linear(sorted_vals, q)
+
+    if 0.25 in qs and 0.75 in qs:
+        out["iqr"] = round(out["p75"] - out["p25"], 6)
+
+    return out
+
+
+def _quantile_linear(sorted_vals: list[float], q: float) -> float:
+    """Interpolation linéaire entre rangs (méthode numpy linear)."""
+    n = len(sorted_vals)
+    if n == 1:
+        return round(sorted_vals[0], 6)
+    pos = q * (n - 1)
+    lower = int(pos)
+    upper = min(lower + 1, n - 1)
+    frac = pos - lower
+    return round(sorted_vals[lower] + frac * (sorted_vals[upper] - sorted_vals[lower]), 6)
+
+
+def _q_label(q: float) -> str:
+    """Convertit un quantile (0.25 / 0.5 / 0.75 / ...) en label payload."""
+    return f"p{int(round(q * 100))}"
+
+
 def get_org_subscribed_kw(
     db: Session,
     org_id: Optional[int],

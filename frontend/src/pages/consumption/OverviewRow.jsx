@@ -13,6 +13,9 @@
 import { useElecCo2Factor } from '../../contexts/EmissionFactorsContext';
 import { useElecPriceReference } from '../../contexts/PriceReferenceContext';
 import { fmtNum } from '../../utils/format';
+// Sprint Énergie P0.S1b (2026-05-29) — helper canonique unique pour
+// conversion kWh → kgCO₂eq. Facteur ADEME V23.6 fourni par backend.
+import { kwhToCo2Kg } from '../../utils/co2';
 
 function fmt(value, decimals = 0) {
   if (value == null || isNaN(value)) return null;
@@ -40,7 +43,7 @@ export default function OverviewRow({ data, unit }) {
   const peakKw = data.peak_kw ?? null;
   const talonKw = data.talon_kw ?? null;
   const offHours = data.off_hours_pct ?? null;
-  const co2e = totalKwh != null ? totalKwh * co2Factor : null;
+  const co2e = kwhToCo2Kg(totalKwh, co2Factor);
   const eur = totalKwh != null ? totalKwh * eurFactor : null;
 
   const kpis = [

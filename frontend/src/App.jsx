@@ -74,6 +74,8 @@ const CxDashboardPage = lazy(() => import('./pages/admin/CxDashboardPage'));
 const EnedisPromotionHealthPage = lazy(() => import('./pages/EnedisPromotionHealthPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
 const ConsumptionPortfolioPage = lazy(() => import('./pages/ConsumptionPortfolioPage'));
+// Sprint Énergie P1.S3a (2026-05-29) — onglet Courbe de charge.
+const LoadCurveTab = lazy(() => import('./pages/consumption/LoadCurveTab'));
 const ActivationPage = lazy(() => import('./pages/ActivationPage'));
 const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDashboardPage'));
 const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizardPage'));
@@ -445,6 +447,17 @@ function App() {
                                         element={
                                           <PageSuspense>
                                             <ConsumptionPortfolioPage />
+                                          </PageSuspense>
+                                        }
+                                      />
+                                      {/* Sprint Énergie P1.S3a (2026-05-29) —
+                                          onglet Courbe de charge branché sur
+                                          /api/energy/loadcurve. */}
+                                      <Route
+                                        path="courbe"
+                                        element={
+                                          <PageSuspense>
+                                            <LoadCurveTab />
                                           </PageSuspense>
                                         }
                                       />

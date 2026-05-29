@@ -69,7 +69,7 @@ export default function HeatmapCard({ data, currentSiteId }) {
                 s.site_id === currentSiteId ? 'text-blue-600 font-semibold' : ''
               }`}
               title={`${s.site_name} — Cliquer pour ouvrir Site360`}
-              onClick={() => navigate(`/site360/${s.site_id}#usages`)}
+              onClick={() => navigate(`/sites/${s.site_id}#usages`)}
               style={{ minWidth: 110 }}
             >
               {s.site_name.length > 16 ? s.site_name.slice(0, 16) + '…' : s.site_name}
@@ -110,7 +110,7 @@ export default function HeatmapCard({ data, currentSiteId }) {
                 color: s.ipe_total > s.benchmark_ademe ? '#DC2626' : '#1A1A1A',
               }}
               title={`IPE total : ${fmt(s.ipe_total)} kWh/m² (benchmark ADEME : ${s.benchmark_ademe})`}
-              onClick={() => navigate(`/site360/${s.site_id}#usages`)}
+              onClick={() => navigate(`/sites/${s.site_id}#usages`)}
             >
               {fmt(s.ipe_total)}
             </div>

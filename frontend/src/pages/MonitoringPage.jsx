@@ -70,10 +70,19 @@ import { getKpiMessage } from '../services/kpiMessaging';
 import { getKpiLabel } from '../shared/kpiLabels';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtDateFR, fmtEur, fmtKwh, fmtKw, fmtCo2, scopeKicker } from '../utils/format';
+// Sprint Énergie P1.S2b (2026-05-29) — agrégations post-filtre scope FE
+// déplacées dans un helper whitelisté (cf. utils/scopedAggregates.js
+// doctrine). Migration cible : /api/energy/synthesis.kpis.estimated_impact_eur
+// quand le backend acceptera scope=site + filtres alert_type en P1.S3.
+import { sumAlertsImpactEur } from '../utils/scopedAggregates';
 import SolPageHeader from '../ui/sol/SolPageHeader';
 import SolNarrative from '../ui/sol/SolNarrative';
 // Sprint 2 Vague B ét8' — HOC SolBriefingHead/Footer factorise grammaire §5.
 import SolBriefingHead from '../ui/sol/SolBriefingHead';
+// Sprint Énergie P1.S3b (2026-05-29) — Synthèse Énergie 30s branchée sur
+// /api/energy/synthesis. Composant autonome avec 10 KPI canoniques +
+// narrative + provenance, sans calcul métier frontend.
+import MonitoringSynthesisStrip from '../ui/energy/MonitoringSynthesisStrip';
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 // Sprint 2 Vague B ét6' — labels FR centralisés (label_registries cross-vue).
@@ -191,30 +200,12 @@ export function kpiStatus(value, thresholds, invert = false) {
   return 'critique';
 }
 
-/**
- * Compute confidence level for a KPI.
- * @param {object} opts - { r2, nPoints, coveragePct, reason }
- * @returns {{ level: 'low'|'medium'|'high', pct: number, reason: string }}
- */
-export function computeConfidence({ r2, nPoints, coveragePct, reason } = {}) {
-  if (reason) return { level: 'low', pct: 0, reason };
-
-  let score = 50; // baseline
-  if (r2 != null) score = r2 * 100; // R² dominates for climate
-  if (nPoints != null) {
-    if (nPoints < 10) score = Math.min(score, 15);
-    else if (nPoints < 30) score = Math.min(score, 40);
-  }
-  if (coveragePct != null) score = Math.min(score, coveragePct);
-
-  score = Math.max(0, Math.min(100, Math.round(score)));
-  const level = score >= 60 ? 'high' : score >= 30 ? 'medium' : 'low';
-  const reasons = [];
-  if (r2 != null && r2 < 0.3) reasons.push(`R² faible (${fmtNum(r2, 2)})`);
-  if (nPoints != null && nPoints < 30) reasons.push(`${nPoints} jours de données`);
-  if (coveragePct != null && coveragePct < 60) reasons.push(`Couverture ${coveragePct}%`);
-  return { level, pct: score, reason: reasons.join(' · ') || 'Données suffisantes' };
-}
+// Sprint Énergie P1.S2b (2026-05-29) — `computeConfidence` déplacé dans
+// `frontend/src/utils/confidenceDisplay.js` (HELPER_WHITELIST source-guard,
+// documentation doctrine in-file). Re-exportée ici pour rétro-compat
+// des éventuels consommateurs externes.
+import { computeConfidence } from '../utils/confidenceDisplay';
+export { computeConfidence };
 
 /**
  * Load factor thresholds by archetype.
@@ -532,8 +523,15 @@ function ExecutiveSummary({
   const wasteAlerts = alerts.filter(
     (a) => WASTE_TYPES.includes(a.alert_type) && a.status !== 'resolved'
   );
-  const totalWasteEur = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_eur || 0), 0);
-  const totalWasteKwh = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_kwh || 0), 0);
+  // Sprint Énergie P1.S2b — agrégations post-filtre scope FE via helper
+  // whitelisté. À remplacer par /api/energy/synthesis.kpis.estimated_impact_eur
+  // dès que le backend acceptera scope=site + filtres alert_type (P1.S3).
+  const totalWasteEur = sumAlertsImpactEur(wasteAlerts);
+  let totalWasteKwh = 0;
+  for (const a of wasteAlerts) {
+    const v = Number(a?.estimated_impact_kwh);
+    if (Number.isFinite(v)) totalWasteKwh += v;
+  }
   const offHoursEst = computeOffHoursEstimate(offHoursKwh);
 
   // Data confidence
@@ -1301,14 +1299,22 @@ function OffHoursDrawer({
   );
 }
 
-function _filterOutliers(points) {
-  if (points.length < 5) return points;
-  const vals = points.map((p) => p.kwh).sort((a, b) => a - b);
-  const q1 = vals[Math.floor(vals.length * 0.25)];
-  const q3 = vals[Math.floor(vals.length * 0.75)];
-  const iqr = q3 - q1;
-  const upper = q3 + 3 * iqr;
-  const lower = q1 - 3 * iqr;
+// Sprint Énergie P0.S1c (2026-05-29, brief P1) — _filterOutliers ne
+// calcule plus Q1/Q3 côté frontend. Les bornes sont fournies par le
+// backend dans `climate.outlier_bounds` (cf. routes/monitoring.py:163+,
+// SoT canonique services/consumption_granularity_service.compute_quantiles).
+// Cette fonction reste un FILTRE D'AFFICHAGE pur : applique les bornes
+// reçues pour ne pas écraser le scatter chart avec des outliers visuels.
+//
+// Si le backend ne fournit pas `outlier_bounds` (compat données legacy
+// ou erreur côté serveur), on retourne tous les points (pas de fallback
+// FE qui re-calculerait — doctrine zéro calcul métier).
+function _filterOutliers(points, outlierBounds) {
+  if (!points || points.length < 5) return points;
+  if (!outlierBounds || outlierBounds.lower == null || outlierBounds.upper == null) {
+    return points;
+  }
+  const { lower, upper } = outlierBounds;
   return points.filter((p) => p.kwh >= lower && p.kwh <= upper);
 }
 
@@ -1325,7 +1331,8 @@ function ClimateScatter({ climate }) {
     );
   }
 
-  const filtered = _filterOutliers(climate.scatter);
+  // P0.S1c — `outlier_bounds` fourni par backend (compute_quantiles SoT).
+  const filtered = _filterOutliers(climate.scatter, climate?.outlier_bounds);
   const removed = climate.scatter.length - filtered.length;
 
   return (
@@ -2149,6 +2156,17 @@ export default function MonitoringPage() {
         onRetry={solBriefingRefetch}
         omitHeader
         onNavigate={navigate}
+      />
+
+      {/* Sprint Énergie P1.S3b (2026-05-29) — Synthèse Énergie 30s branchée
+          sur /api/energy/synthesis. Affiche 10 KPI canoniques (consumption,
+          coût, CO₂, peak, prix pondéré, qualité données, couverture sites,
+          alertes/actions ouvertes, impact financier estimé) + narrative
+          backend + provenance complète. Doctrine zéro calcul métier FE. */}
+      <MonitoringSynthesisStrip
+        scope={{ kind: siteId ? 'site' : 'org', id: siteId, org_id: org?.id }}
+        period="30d"
+        compare="none"
       />
 
       {error && <ErrorState message={error} onRetry={loadAll} />}
