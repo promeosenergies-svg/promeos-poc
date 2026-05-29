@@ -44,6 +44,31 @@ router = APIRouter(prefix="/api/monitoring", tags=["Monitoring"])
 from services.electric_monitoring.score_utils import clamp_score_0_100 as _clamp_monitoring_score  # noqa: E402
 
 
+# Sprint Énergie P0.S1a (2026-05-29, brief P0 #1 résiduel) — le top-level
+# `data_quality_score` était déjà clampé depuis brief C1, mais le frontend
+# MonitoringPage:1841 pioche `kpis?.data_quality_score` (sub-objet
+# kpis_json). Ce dict provient de KPIEngine.compute() et n'était PAS
+# clampé en sortie API → le bug « 108/100 » persistait à l'affichage.
+# Cette fonction garantit que TOUT champ score connu dans le sub-objet
+# kpis est aussi clampé. À appliquer sur kpis, kpis/compare, snapshots.
+_KPIS_DICT_SCORE_FIELDS = ("data_quality_score", "risk_power_score")
+
+
+def _clamp_kpis_scores(kpis_json: dict) -> dict:
+    """Clamp les champs score connus dans un dict kpis_json (sub-objet).
+
+    Retourne une copie shallow avec les scores [0, 100]. Si une clé est
+    absente, elle reste absente (ne crée pas de None artificiel).
+    """
+    if not kpis_json:
+        return {}
+    out = dict(kpis_json)
+    for k in _KPIS_DICT_SCORE_FIELDS:
+        if k in out:
+            out[k] = _clamp_monitoring_score(out[k])
+    return out
+
+
 # --- Pydantic models ---
 
 
@@ -198,7 +223,10 @@ def get_monitoring_kpis(
         "site_id": snapshot.site_id,
         "meter_id": snapshot.meter_id,
         "period": f"{snapshot.period_start.date()} - {snapshot.period_end.date()}",
-        "kpis": snapshot.kpis_json or {},
+        # P0.S1a : clamp aussi les scores DANS le sub-objet kpis (FE lit
+        # `kpis?.data_quality_score` en MonitoringPage:1841, pas le
+        # top-level).
+        "kpis": _clamp_kpis_scores(snapshot.kpis_json or {}),
         # Énergie P0b visual credibility (2026-05-27, brief C1) — defense-in-
         # depth : clamp à la lecture pour les snapshots legacy persistés avant
         # le fix orchestrator. Garantit 0 ≤ score ≤ 100 côté payload.
@@ -320,7 +348,8 @@ def get_monitoring_kpis_compare(
         "compare": {
             "snapshot_id": compare_snapshot.id,
             "period": f"{compare_snapshot.period_start.date()} - {compare_snapshot.period_end.date()}",
-            "kpis": compare_snapshot.kpis_json or {},
+            # P0.S1a : clamp aussi scores DANS sub-objet kpis (cf. note kpis route).
+            "kpis": _clamp_kpis_scores(compare_snapshot.kpis_json or {}),
             # Énergie P0b visual credibility (2026-05-27, brief C1) — clamp.
             "data_quality_score": _clamp_monitoring_score(compare_snapshot.data_quality_score),
             "risk_power_score": _clamp_monitoring_score(compare_snapshot.risk_power_score),

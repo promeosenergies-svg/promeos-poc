@@ -1027,8 +1027,24 @@ export default function ConsumptionDiagPage() {
           € leviers + plan d'actions priorisé. Sert Marie DAF (économies
           cachées) + Energy Manager (priorisation) + Investisseur. */}
       {/* Sprint 2 Vague B ét8'-bis — factorisation grammaire §5 via SolBriefingHead. */}
+      {/* Sprint Énergie P0.S1a (2026-05-29, brief P0 #2 résiduel) — quand
+          il n'y a aucune anomalie détectée (summary === null ou
+          total_insights === 0), on omet les 3 KPI hero du briefing.
+          Sans ce filtre, SolNarrative rend systématiquement les 3 tuiles
+          « 0 anomalie / 0 € / 0 € » même en présence de l'EmptyState
+          « Aucun gisement détecté » → message contradictoire, anti-
+          confiance DAF (cf. brief C3 P0b + brief sprint correction).
+          Le briefing texte (kicker/title/italicHook/narrative) reste
+          rendu — seules les tuiles chiffrées sont masquées. */}
       <SolBriefingHead
-        briefing={solBriefing}
+        briefing={
+          solBriefing &&
+          (!summary || (summary?.total_insights ?? 0) === 0) &&
+          Array.isArray(solBriefing.kpis) &&
+          solBriefing.kpis.length > 0
+            ? { ...solBriefing, kpis: [] }
+            : solBriefing
+        }
         error={solBriefingError}
         onRetry={solBriefingRefetch}
         omitHeader
