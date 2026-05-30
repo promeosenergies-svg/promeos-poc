@@ -9,7 +9,17 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 // export (ne respectaient pas la charte corporate Sol § Premium Night).
 // Usage Steering P1 (2026-05-27) — icône Sliders pour onglet « Pilotage
 // des usages » (4ᵉ tab interne, brief C1).
-import { TrendingUp, BarChart2, Plug, Printer, FileSpreadsheet, Sliders } from 'lucide-react';
+// Sprint Énergie P1.S4 (2026-05-29) — icône CalendarDays pour onglet
+// « Semaine type » (5ᵉ tab interne, branché sur /api/energy/week-profile).
+import {
+  TrendingUp,
+  BarChart2,
+  Plug,
+  Printer,
+  FileSpreadsheet,
+  Sliders,
+  CalendarDays,
+} from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import {
@@ -40,6 +50,10 @@ import FooterLinks from '../components/usages/FooterLinks';
 // Usage Steering P1 (2026-05-27, brief C1) — 4ᵉ onglet « Pilotage des
 // usages » dans /usages. PAS de nouveau menu, PAS de /usage-steering.
 import PilotageTab from '../components/usages/PilotageTab';
+// Sprint Énergie P1.S4 (2026-05-29) — 5ᵉ onglet interne « Semaine type »
+// branché sur /api/energy/week-profile (livré S2b). Heatmap 7×24 + 4 KPI
+// canoniques (highest_day/hour, night_baseload_kw, weekend_consumption_pct).
+import WeekProfileTab from './usages/WeekProfileTab';
 
 const ALL_TABS = [
   { id: 'timeline', label: 'Évolution', icon: TrendingUp },
@@ -48,6 +62,9 @@ const ALL_TABS = [
   // Usage Steering P1 — onglet pilotage interne (brief C1) ; consomme
   // /api/usages/pilotage-summary + sync vers Centre d'Action V4.
   { id: 'pilotage', label: 'Pilotage des usages', icon: Sliders },
+  // Sprint Énergie P1.S4 — onglet Semaine type ; consomme
+  // /api/energy/week-profile (zéro calcul métier FE).
+  { id: 'semaine-type', label: 'Semaine type', icon: CalendarDays },
 ];
 
 export default function UsagesDashboardPage() {
@@ -60,7 +77,9 @@ export default function UsagesDashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
   const siteFromUrl = searchParams.get('site');
-  const validInitialTab = ['timeline', 'baseline', 'comptage', 'pilotage'].includes(tabFromUrl)
+  const validInitialTab = ['timeline', 'baseline', 'comptage', 'pilotage', 'semaine-type'].includes(
+    tabFromUrl
+  )
     ? tabFromUrl
     : 'timeline';
 
@@ -336,6 +355,10 @@ export default function UsagesDashboardPage() {
               }}
             />
           )}
+          {/* Sprint Énergie P1.S4 (2026-05-29) — onglet Semaine type
+              branché sur /api/energy/week-profile. Composant autonome,
+              consomme `useScope()` directement. Doctrine zéro calcul FE. */}
+          {activeTab === 'semaine-type' && <WeekProfileTab />}
         </div>
 
         {/* Colonne droite : heatmap IPE */}
