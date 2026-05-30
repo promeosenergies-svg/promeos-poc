@@ -16,16 +16,18 @@ import {
 } from 'lucide-react';
 import { quickCreateSite } from '../services/api';
 
+// chasse-bugs 2026-05-29 — accents FR ajoutés (cohérent avec SiteCreationWizard)
+// cf. docs/audits/chasse_bugs_patrimoine_2026_05_29.md Cat 4 mineur
 const USAGE_OPTIONS = [
   { value: 'bureau', label: 'Bureau' },
   { value: 'commerce', label: 'Commerce' },
-  { value: 'entrepot', label: 'Entrepot' },
+  { value: 'entrepot', label: 'Entrepôt' },
   { value: 'usine', label: 'Usine' },
-  { value: 'hotel', label: 'Hotel' },
-  { value: 'sante', label: 'Sante' },
+  { value: 'hotel', label: 'Hôtel' },
+  { value: 'sante', label: 'Santé' },
   { value: 'enseignement', label: 'Enseignement' },
-  { value: 'copropriete', label: 'Copropriete' },
-  { value: 'collectivite', label: 'Collectivite' },
+  { value: 'copropriete', label: 'Copropriété' },
+  { value: 'collectivite', label: 'Collectivité' },
   { value: 'logement_social', label: 'Logement social' },
   { value: 'magasin', label: 'Magasin' },
 ];
