@@ -17,7 +17,7 @@
  * - Warning obligatoire sous les cartes :
  *   « Simulation indicative — ne constitue pas une promesse d'économie. »
  */
-import { AlertTriangle, BadgeCheck, Sparkles } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, HelpCircle, Sparkles } from 'lucide-react';
 
 const DEFAULT_WARNING = "Simulation indicative — ne constitue pas une promesse d'économie.";
 
@@ -59,6 +59,43 @@ function fmtDelta(v) {
   );
 }
 
+function ScenarioProvenanceDot({ provenance }) {
+  if (!provenance?.service) return null;
+  return (
+    <span className="relative inline-block group" data-testid="scenario-provenance">
+      <HelpCircle size={11} className="text-gray-300 hover:text-gray-500 cursor-help" />
+      <span className="absolute right-0 top-4 z-20 hidden group-hover:block w-60 rounded-lg border border-gray-200 bg-white p-2 text-[10px] text-gray-700 shadow-lg">
+        {provenance.source && (
+          <>
+            <span className="block text-gray-500">Source</span>
+            <span className="block font-mono break-words">{provenance.source}</span>
+          </>
+        )}
+        <span className="block text-gray-500 mt-1">Service</span>
+        <span className="block font-mono break-words">{provenance.service}</span>
+        {provenance.formula && (
+          <>
+            <span className="block text-gray-500 mt-1">Formule</span>
+            <span className="block font-mono break-words">{provenance.formula}</span>
+          </>
+        )}
+        {provenance.period && (
+          <>
+            <span className="block text-gray-500 mt-1">Période</span>
+            <span className="block">{provenance.period}</span>
+          </>
+        )}
+        {typeof provenance.confidence === 'number' && (
+          <>
+            <span className="block text-gray-500 mt-1">Confiance</span>
+            <span className="block">{Math.round(provenance.confidence * 100)} %</span>
+          </>
+        )}
+      </span>
+    </span>
+  );
+}
+
 function ScenarioCard({ scenario, isRecommended }) {
   const isCurrent = scenario.status === 'current';
   const tint = RISK_TINT[scenario.risk_level] || RISK_TINT.modéré;
@@ -74,6 +111,7 @@ function ScenarioCard({ scenario, isRecommended }) {
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-semibold text-gray-800">{scenario.label}</p>
         <div className="flex items-center gap-1">
+          <ScenarioProvenanceDot provenance={scenario.provenance} />
           {isCurrent && (
             <span
               className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold inline-flex items-center gap-0.5"

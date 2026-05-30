@@ -17,12 +17,28 @@
  * 12. warning simulation indicative visible ;
  * 13. zéro calcul métier interdit.
  */
+import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('../services/api/energy', () => ({
   getMarketExposure: vi.fn(),
 }));
+
+// Sprint P1.S7 — EnergyCrossLinks utilise <Link> de react-router-dom.
+// Préserve MemoryRouter et override seulement Link (évite cross-pollution
+// avec EnergyCrossLinks.test.jsx qui utilise MemoryRouter pour de vrai).
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    Link: ({ to, children, replace: _replace, state: _state, ...rest }) => (
+      <a href={to} {...rest}>
+        {children}
+      </a>
+    ),
+  };
+});
 
 const mockSetSite = vi.fn();
 let _scopeOverride = null;

@@ -237,3 +237,134 @@ class TestRouterRegistration:
         content = main_file.read_text(encoding="utf-8")
         assert "energy_orchestration_router" in content
         assert "app.include_router(energy_orchestration_router)" in content
+
+
+class TestProvenanceCoveragePolishP1S7:
+    """Sprint P1.S7 — durcissement de la couverture provenance.
+
+    Doctrine : tout `EnergyKpi` exposé par les 5 endpoints
+    `/api/energy/*` DOIT pouvoir exposer source + service + formula +
+    period + confidence + assumptions. Les 4 premiers sont requis par
+    le schéma `EnergyProvenance` ; confidence + assumptions sont
+    facultatifs côté schéma mais doivent être DÉCLARÉS comme champs.
+    """
+
+    def test_provenance_declares_confidence_field(self):
+        from schemas.energy_orchestration import EnergyProvenance
+
+        fields = EnergyProvenance.model_fields
+        assert "confidence" in fields, "EnergyProvenance.confidence doit être un champ déclaré"
+
+    def test_provenance_declares_assumptions_field(self):
+        from schemas.energy_orchestration import EnergyProvenance
+
+        fields = EnergyProvenance.model_fields
+        assert "assumptions" in fields, "EnergyProvenance.assumptions doit être un champ déclaré"
+
+    def test_synthesis_kpis_typed_dict_of_energy_kpi(self):
+        """Tous les KPI synthesis sont typés `dict[str, EnergyKpi]`
+        (et héritent donc de la contrainte provenance obligatoire)."""
+        from schemas.energy_orchestration import EnergySynthesisResponse
+
+        info = EnergySynthesisResponse.model_fields["kpis"]
+        anno = str(info.annotation)
+        assert "EnergyKpi" in anno, f"EnergySynthesisResponse.kpis doit être typé sur EnergyKpi (a: {anno})"
+
+    def test_week_profile_kpis_all_require_energy_kpi_type(self):
+        from schemas.energy_orchestration import WeekProfileKpis
+
+        for key, info in WeekProfileKpis.model_fields.items():
+            anno = str(info.annotation)
+            assert "EnergyKpi" in anno, f"WeekProfileKpis.{key} doit être typé EnergyKpi (a: {anno})"
+
+    def test_cost_vs_contract_kpis_all_require_energy_kpi_type(self):
+        from schemas.energy_orchestration import EnergyCostContractKpis
+
+        for key, info in EnergyCostContractKpis.model_fields.items():
+            anno = str(info.annotation)
+            assert "EnergyKpi" in anno, f"EnergyCostContractKpis.{key} doit être typé EnergyKpi (a: {anno})"
+
+    def test_market_exposure_kpis_all_require_energy_kpi_type(self):
+        from schemas.energy_orchestration import EnergyMarketExposureKpis
+
+        for key, info in EnergyMarketExposureKpis.model_fields.items():
+            anno = str(info.annotation)
+            assert "EnergyKpi" in anno, f"EnergyMarketExposureKpis.{key} doit être typé EnergyKpi (a: {anno})"
+
+    def test_synthesis_response_root_provenance_required(self):
+        from schemas.energy_orchestration import EnergySynthesisResponse
+
+        fields = EnergySynthesisResponse.model_fields
+        assert fields["provenance"].is_required(), "EnergySynthesisResponse.provenance doit être obligatoire"
+
+    def test_loadcurve_response_root_provenance_required(self):
+        from schemas.energy_orchestration import EnergyLoadCurveResponse
+
+        fields = EnergyLoadCurveResponse.model_fields
+        assert fields["provenance"].is_required(), "EnergyLoadCurveResponse.provenance doit être obligatoire"
+
+    def test_week_profile_response_root_provenance_required(self):
+        from schemas.energy_orchestration import EnergyWeekProfileResponse
+
+        fields = EnergyWeekProfileResponse.model_fields
+        assert fields["provenance"].is_required(), "EnergyWeekProfileResponse.provenance doit être obligatoire"
+
+    def test_cost_vs_contract_response_root_provenance_required(self):
+        from schemas.energy_orchestration import EnergyCostContractResponse
+
+        fields = EnergyCostContractResponse.model_fields
+        assert fields["provenance"].is_required(), "EnergyCostContractResponse.provenance doit être obligatoire"
+
+    def test_market_exposure_response_root_provenance_required(self):
+        from schemas.energy_orchestration import EnergyMarketExposureResponse
+
+        fields = EnergyMarketExposureResponse.model_fields
+        assert fields["provenance"].is_required(), "EnergyMarketExposureResponse.provenance doit être obligatoire"
+
+    def test_price_decomposition_component_has_provenance(self):
+        from schemas.energy_orchestration import EnergyPriceComponent
+
+        fields = EnergyPriceComponent.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_contract_scenario_has_provenance(self):
+        from schemas.energy_orchestration import EnergyContractScenario
+
+        fields = EnergyContractScenario.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_expensive_hour_has_provenance(self):
+        from schemas.energy_orchestration import EnergyExpensiveHour
+
+        fields = EnergyExpensiveHour.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_favorable_hour_has_provenance(self):
+        from schemas.energy_orchestration import EnergyFavorableHour
+
+        fields = EnergyFavorableHour.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_baseload_comparison_has_provenance(self):
+        from schemas.energy_orchestration import EnergyBaseloadComparison
+
+        fields = EnergyBaseloadComparison.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_displacement_simulation_has_provenance(self):
+        from schemas.energy_orchestration import EnergyDisplacementSimulation
+
+        fields = EnergyDisplacementSimulation.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_contract_summary_has_provenance(self):
+        from schemas.energy_orchestration import EnergyContractSummary
+
+        fields = EnergyContractSummary.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_market_context_has_provenance(self):
+        from schemas.energy_orchestration import EnergyMarketContext
+
+        fields = EnergyMarketContext.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()

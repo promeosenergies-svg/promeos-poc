@@ -12,9 +12,46 @@
  * Doctrine : warning OBLIGATOIRE, aucune promesse d'économie certaine,
  * aucun calcul FE.
  */
-import { AlertTriangle, FlaskConical } from 'lucide-react';
+import { AlertTriangle, FlaskConical, HelpCircle } from 'lucide-react';
 
 const DEFAULT_WARNING = "Simulation indicative — ne constitue pas une promesse d'économie.";
+
+function SimulationProvenanceDot({ provenance }) {
+  if (!provenance?.service) return null;
+  return (
+    <span className="relative inline-block group" data-testid="simulation-provenance">
+      <HelpCircle size={11} className="text-blue-300 hover:text-blue-500 cursor-help" />
+      <span className="absolute right-0 top-4 z-20 hidden group-hover:block w-60 rounded-lg border border-gray-200 bg-white p-2 text-[10px] text-gray-700 shadow-lg">
+        {provenance.source && (
+          <>
+            <span className="block text-gray-500">Source</span>
+            <span className="block font-mono break-words">{provenance.source}</span>
+          </>
+        )}
+        <span className="block text-gray-500 mt-1">Service</span>
+        <span className="block font-mono break-words">{provenance.service}</span>
+        {provenance.formula && (
+          <>
+            <span className="block text-gray-500 mt-1">Formule</span>
+            <span className="block font-mono break-words">{provenance.formula}</span>
+          </>
+        )}
+        {provenance.period && (
+          <>
+            <span className="block text-gray-500 mt-1">Période</span>
+            <span className="block">{provenance.period}</span>
+          </>
+        )}
+        {typeof provenance.confidence === 'number' && (
+          <>
+            <span className="block text-gray-500 mt-1">Confiance</span>
+            <span className="block">{Math.round(provenance.confidence * 100)} %</span>
+          </>
+        )}
+      </span>
+    </span>
+  );
+}
 
 function fmtEur(v) {
   if (v === null || v === undefined) return '—';
@@ -61,12 +98,15 @@ export default function DisplacementSimulationCard({
             {simulation.label || 'Simulation indicative'}
           </h3>
         </div>
-        <span
-          className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold"
-          data-testid="simulation-status-badge"
-        >
-          Simulation
-        </span>
+        <div className="flex items-center gap-1.5">
+          <SimulationProvenanceDot provenance={simulation.provenance} />
+          <span
+            className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold"
+            data-testid="simulation-status-badge"
+          >
+            Simulation
+          </span>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
