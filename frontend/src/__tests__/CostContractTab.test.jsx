@@ -16,12 +16,28 @@
  * 9. décomposition prix affiche fourniture / TURPE / taxes ;
  * 10. aucun calcul métier interdit.
  */
+import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('../services/api/energy', () => ({
   getCostVsContract: vi.fn(),
 }));
+
+// Sprint P1.S7 — EnergyCrossLinks utilise <Link> de react-router-dom.
+// Préserve MemoryRouter et override seulement Link (évite cross-pollution
+// avec EnergyCrossLinks.test.jsx qui utilise MemoryRouter pour de vrai).
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    Link: ({ to, children, replace: _replace, state: _state, ...rest }) => (
+      <a href={to} {...rest}>
+        {children}
+      </a>
+    ),
+  };
+});
 
 const mockSetSite = vi.fn();
 let _mockScopeOverride = null;

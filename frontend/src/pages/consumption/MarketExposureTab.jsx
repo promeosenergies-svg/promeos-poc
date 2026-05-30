@@ -34,7 +34,13 @@ import FavorableHoursPanel from '../../ui/energy/FavorableHoursPanel';
 import BaseloadComparisonCard from '../../ui/energy/BaseloadComparisonCard';
 import DisplacementSimulationCard from '../../ui/energy/DisplacementSimulationCard';
 import SiteRequiredState from '../../ui/energy/SiteRequiredState';
+import EnergyCrossLinks from '../../ui/energy/EnergyCrossLinks';
 import { EmptyState, SkeletonCard } from '../../ui';
+
+const CROSS_LINKS = [
+  { kind: 'achat', to: '/achat-energie', label: 'Simuler une offre alternative' },
+  { kind: 'action', to: '/action-center-v4', label: 'Créer une action' },
+];
 
 const KPI_ORDER = [
   'spot_cost_theoretical_eur',
@@ -315,6 +321,8 @@ export default function MarketExposureTab({
         {hasFavorable && <FavorableHoursPanel favorableHours={payload.favorable_hours} />}
 
         {payload?.simulation && <DisplacementSimulationCard simulation={payload.simulation} />}
+
+        <EnergyCrossLinks links={CROSS_LINKS} />
       </div>
     </div>
   );

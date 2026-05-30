@@ -27,7 +27,13 @@ import KpiCardWithProvenance from '../../ui/energy/KpiCardWithProvenance';
 import CostVsContractCard from '../../ui/energy/CostVsContractCard';
 import PriceDecompositionTable from '../../ui/energy/PriceDecompositionTable';
 import SiteRequiredState from '../../ui/energy/SiteRequiredState';
+import EnergyCrossLinks from '../../ui/energy/EnergyCrossLinks';
 import { EmptyState, SkeletonCard } from '../../ui';
+
+const CROSS_LINKS = [
+  { kind: 'bill', to: '/bill-intel', label: 'Comparer à la facture' },
+  { kind: 'achat', to: '/achat-energie', label: 'Simuler une offre alternative' },
+];
 
 const KPI_ORDER = [
   'total_cost_eur',
@@ -291,6 +297,8 @@ export default function CostContractTab({
         {Array.isArray(priceDecomp) && priceDecomp.length > 0 && (
           <PriceDecompositionTable priceDecomposition={priceDecomp} />
         )}
+
+        <EnergyCrossLinks links={CROSS_LINKS} />
       </div>
     </div>
   );

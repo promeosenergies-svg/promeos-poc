@@ -15,14 +15,33 @@
  *
  * Le SoT canonique du score reste
  * `backend/services/data_freshness_service.compute_meter_freshness`
- * (livré P0.S1b). En P1.S3, ce helper sera supprimé au profit du
- * payload `/api/energy/synthesis.kpis.data_quality_score.value` qui
- * exposera directement le score + level pré-calculés backend
- * (cf. _kpi_data_quality dans services/energy_orchestration/synthesis.py).
+ * (livré P0.S1b). En P1.S3b, la nouvelle vue
+ * `MonitoringSynthesisStrip` consomme directement
+ * `synthesis.kpis.data_quality_score.value` (déjà borné [0,100] backend
+ * via `clamp_score_0_100`) et ne passe PAS par `computeConfidence` —
+ * cf. `frontend/src/ui/energy/MonitoringSynthesisStrip.jsx`.
  *
- * En attendant cette extension P1.S3, le helper survit ici pour
- * permettre aux 2 useMemo `climateConf` / `qualityConf` de MonitoringPage
- * de rendre les badges sans appel API supplémentaire à chaque rerender.
+ * STATUT P1.S7 (Polish transverse — 2026-05-30)
+ * ──────────────────────────────────────────────
+ * `computeConfidence` reste utilisé uniquement par MonitoringPage.jsx
+ * (lignes 1905-1908 `climateConf` + 1915-1919 `qualityConf`) pour le
+ * climate scatter (r² + n_points) et la card qualité legacy.
+ *
+ * Le climate scatter n'est PAS encore couvert par
+ * `/api/energy/synthesis` (hors scope synthesis-vue-30s). Migrer
+ * `climateConf` vers un endpoint backend dédié = scope P2.1
+ * (MonitoringPage split + endpoint `/api/energy/climate-scatter`).
+ *
+ * Décision P1.S7 — **Option B** (conservation justifiée) : ne PAS
+ * retirer de la HELPER_WHITELIST. La modification massive de
+ * MonitoringPage est explicitement interdite par le brief P1.S7 ; le
+ * retrait sera traité en P2.1 (climate scatter backend + MonitoringPage
+ * refactor).
+ *
+ * Cible de suppression : P2.1 MonitoringPage split (climate scatter
+ * backend + retrait `computeConfidence`/`confidenceDisplay.js` +
+ * HELPER_WHITELIST applicative ramenée à 2 entrées : `co2.js` +
+ * `scopedAggregates.js`).
  */
 
 import { fmtNum } from './format';
