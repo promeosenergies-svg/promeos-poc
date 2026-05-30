@@ -291,9 +291,15 @@ from .action_template import ActionTemplate
 # Onboarding Progress (V113)
 from .onboarding_progress import OnboardingProgress
 
-# Market Prices — DEPRECATED: legacy table 'market_prices' (Step 17)
-# Tous les nouveaux développements doivent utiliser MktPrice (table 'mkt_prices')
-from .market_price import MarketPrice  # legacy, ne pas utiliser dans du nouveau code
+# Market Prices — DEPRECATED Sprint Énergie P2.3 (2026-05-30)
+# Table legacy 'market_prices' (Step 17). SOURCE DE VÉRITÉ canonique :
+# MktPrice (table 'mkt_prices') exposé ci-dessous depuis market_models.
+# Cet import est conservé UNIQUEMENT pour que SQLAlchemy reconnaisse la
+# table legacy existante en DB (préservation data — cf. brief P2.3
+# « Ne pas dropper la table MarketPrice legacy »).
+# Tout nouvel usage applicatif est INTERDIT (source-guard
+# test_market_price_canonical_source_guards.py).
+from .market_price import MarketPrice  # noqa: F401 — DEPRECATED, conservé pour compat ORM table legacy
 
 # Market Data V2 — source de vérité
 from .market_models import (

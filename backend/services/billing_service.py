@@ -173,7 +173,9 @@ def get_reference_price(
     Resolve the reference price for a site, with clear priority:
       0. Active V2 ContratCadre annexe → resolve_pricing() cascade
       1. Active EnergyContract covering the invoice period
-      2. MarketPrice moyenne 30 jours (EPEX Spot FR)
+      2. MktPrice moyenne 30 jours (EPEX Spot FR — table canonique
+         'mkt_prices' depuis Sprint Énergie P1.S2d ; remplace l'ancien
+         MarketPrice legacy marqué DEPRECATED P2.3)
       3. SiteTariffProfile for the site
       4. Config fallback (0.068 elec, 0.045 gaz)
     Returns: (price_eur_per_kwh, source_label)
