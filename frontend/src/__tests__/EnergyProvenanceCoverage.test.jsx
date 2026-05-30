@@ -96,12 +96,18 @@ describe('Provenance coverage — KpiCardWithProvenance affiche les 5 axes', () 
   });
 });
 
-describe('Provenance coverage — état confidenceDisplay.js documenté P1.S7', () => {
-  it('confidenceDisplay.js contient la justification P1.S7 Option B', () => {
-    const src = readSrc('../utils/confidenceDisplay.js');
-    expect(src).toMatch(/P1\.S7/);
-    expect(src).toMatch(/Option B/);
+describe('Provenance coverage — état confidenceDisplay P2.1 (déplacement effectif)', () => {
+  it('utils/confidenceDisplay.js SUPPRIMÉ en P2.1 (déplacé sous pages/monitoring/)', () => {
+    const { existsSync } = require('fs');
+    const { resolve } = require('path');
+    expect(existsSync(resolve(__dirname, '../utils/confidenceDisplay.js'))).toBe(false);
+  });
+
+  it('pages/monitoring/monitoringConfidenceHelper.js documenté P2.1', () => {
+    const src = readSrc('../pages/monitoring/monitoringConfidenceHelper.js');
     expect(src).toMatch(/P2\.1/);
+    expect(src).toMatch(/déplacé/i);
+    expect(src).toContain('computeConfidence');
   });
 
   it("MonitoringSynthesisStrip n'importe PAS computeConfidence (consomme data_quality_score backend)", () => {

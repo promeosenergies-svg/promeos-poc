@@ -200,11 +200,16 @@ export function kpiStatus(value, thresholds, invert = false) {
   return 'critique';
 }
 
-// Sprint Énergie P1.S2b (2026-05-29) — `computeConfidence` déplacé dans
-// `frontend/src/utils/confidenceDisplay.js` (HELPER_WHITELIST source-guard,
-// documentation doctrine in-file). Re-exportée ici pour rétro-compat
-// des éventuels consommateurs externes.
-import { computeConfidence } from '../utils/confidenceDisplay';
+// Sprint Énergie P2.1 (2026-05-30) — `computeConfidence` déplacé depuis
+// `frontend/src/utils/confidenceDisplay.js` vers
+// `frontend/src/pages/monitoring/monitoringConfidenceHelper.js`. Le
+// fichier `utils/confidenceDisplay.js` est SUPPRIMÉ et l'entrée
+// `frontend/src/utils/confidenceDisplay.js` retirée de HELPER_WHITELIST
+// du source-guard `test_frontend_no_business_calc_source_guards.py`
+// (3 → 2 entrées). Re-exportée ici pour rétro-compat des consommateurs
+// existants (tests `MonitoringPage.test.js`).
+import { computeConfidence } from './monitoring/monitoringConfidenceHelper';
+import MonitoringClimateScatter from './monitoring/MonitoringClimateScatter';
 export { computeConfidence };
 
 /**
@@ -1318,73 +1323,10 @@ function _filterOutliers(points, outlierBounds) {
   return points.filter((p) => p.kwh >= lower && p.kwh <= upper);
 }
 
-function ClimateScatter({ climate }) {
-  if (!climate || !climate.scatter || climate.scatter.length === 0) {
-    const reason = climate?.reason;
-    const msg = reason ? CLIMATE_REASONS[reason] || reason : 'Pas de données climatiques.';
-    return (
-      <div className="text-center py-12">
-        <Thermometer size={28} className="mx-auto text-gray-200 mb-2" />
-        <p className="text-sm text-gray-400">{msg}</p>
-        {reason && <p className="text-xs text-gray-300 mt-1">code: {reason}</p>}
-      </div>
-    );
-  }
-
-  // P0.S1c — `outlier_bounds` fourni par backend (compute_quantiles SoT).
-  const filtered = _filterOutliers(climate.scatter, climate?.outlier_bounds);
-  const removed = climate.scatter.length - filtered.length;
-
-  return (
-    <div>
-      <ResponsiveContainer width="100%" height={250}>
-        <ScatterChart margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis
-            dataKey="T"
-            name="Température (°C)"
-            unit=" °C"
-            tick={{ fontSize: 11 }}
-            type="number"
-          />
-          <YAxis
-            dataKey="kwh"
-            name="Conso. journalière"
-            unit=" kWh/j"
-            tick={{ fontSize: 11 }}
-            type="number"
-          />
-          <RTooltip cursor={{ strokeDasharray: '3 3' }} />
-          <Scatter data={filtered} fill="#0072B2" fillOpacity={0.55} r={3} name="Jours" />
-          {climate.fit_line && climate.fit_line.length > 0 && (
-            <Scatter
-              data={climate.fit_line}
-              fill="none"
-              line={{ stroke: '#E69F00', strokeWidth: 2.5 }}
-              shape={() => null}
-              name="Régression"
-            />
-          )}
-        </ScatterChart>
-      </ResponsiveContainer>
-      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-        {climate.slope_kw_per_c != null && (
-          <span>Pente: {fmtNum(climate.slope_kw_per_c, 1)} (kWh/j)/°C</span>
-        )}
-        {climate.balance_point_c != null && (
-          <span>Tb: {fmtNum(climate.balance_point_c, 1)} °C</span>
-        )}
-        {climate.r_squared != null && <span>R²: {fmtNum(climate.r_squared, 2)}</span>}
-        {climate.label && <span>{CLIMATE_LABEL_FR[climate.label] || climate.label}</span>}
-        {removed > 0 && (
-          <span className="text-orange-400">
-            {removed} outlier{removed > 1 ? 's' : ''} masqué{removed > 1 ? 's' : ''}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
+// Sprint Énergie P2.1 (2026-05-30) — Composant `ClimateScatter` extrait
+// dans `frontend/src/pages/monitoring/MonitoringClimateScatter.jsx`
+// (réduction de 3 249 LoC MonitoringPage). Aucune modification visuelle
+// volontaire — extraction mécanique. Importé en haut du fichier.
 
 // --- Drawer helpers ---
 
@@ -2805,7 +2747,7 @@ export default function MonitoringPage() {
                       kWh/jour vs °C
                     </span>
                   </h2>
-                  <ClimateScatter climate={climate} />
+                  <MonitoringClimateScatter climate={climate} />
                   {isExpert && climate?.scatter && climate.scatter.length > 0 && (
                     <details className="mt-3">
                       <summary className="text-[10px] text-gray-400 font-mono cursor-pointer hover:text-gray-600">
