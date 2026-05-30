@@ -547,3 +547,25 @@ export const getWeekProfile = async (params = {}) => {
   const response = await api.get('/energy/week-profile', { params });
   return response.data;
 };
+
+/**
+ * GET /api/energy/cost-vs-contract — vue Coût & contrat
+ * (4 scénarios fixed/indexed/mixed/ths + décomposition prix).
+ *
+ * Sprint Énergie P1.S5 — helper canonique consommé par
+ * `frontend/src/pages/consumption/CostContractTab.jsx`. Aucun calcul
+ * métier frontend : tout (KPI, scénarios, deltas, share_pct, warning)
+ * vient du backend.
+ *
+ * @param {object} params - { scope, scope_id, period, scenarios, org_id }
+ *   - scope        : 'site' | 'meter' | 'portfolio' | 'org'
+ *   - scope_id     : id du périmètre (selon scope)
+ *   - period       : '7d' | '30d' | '90d' | '12m' (défaut '12m')
+ *   - scenarios    : string CSV, ex: 'fixed,indexed,mixed,ths'
+ *   - org_id       : optionnel, force l'org-scoping côté backend
+ * @returns {Promise<EnergyCostContractResponse>}
+ */
+export const getCostVsContract = async (params = {}) => {
+  const response = await api.get('/energy/cost-vs-contract', { params });
+  return response.data;
+};

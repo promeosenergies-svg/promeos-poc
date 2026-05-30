@@ -10,17 +10,20 @@
  * reste accessible via module admin NavRegistry + ⌘K search.
  */
 import { NavLink, Outlet } from 'react-router-dom';
-import { Activity, BarChart3, Upload, Zap, Building2 } from 'lucide-react';
+import { Activity, BarChart3, ReceiptText, Upload, Zap, Building2 } from 'lucide-react';
 import { PageShell } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 
 // Sprint Énergie P1.S3a (2026-05-29) — ajout onglet « Courbe de charge »
 // branché sur /api/energy/loadcurve. Pas de route top-level, pas de menu
 // rail modifié — onglet interne sous /consommations (architecture nested).
+// Sprint Énergie P1.S5 (2026-05-30) — ajout onglet « Coût & contrat »
+// branché sur /api/energy/cost-vs-contract. Doctrine zéro calcul métier FE.
 const TABS = [
   { to: '/consommations/portfolio', label: 'Portefeuille', icon: Building2 },
   { to: '/consommations/explorer', label: 'Explorer', icon: BarChart3 },
   { to: '/consommations/courbe', label: 'Courbe de charge', icon: Activity },
+  { to: '/consommations/cout-contrat', label: 'Coût & contrat', icon: ReceiptText },
   { to: '/consommations/import', label: 'Import', icon: Upload },
 ];
 
