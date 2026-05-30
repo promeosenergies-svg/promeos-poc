@@ -62,9 +62,13 @@ export function LinkItem({ link }) {
         {truncatedId || LINKS_COPY.noneFallback}
       </span>
       {isAvailable && link.link_type ? (
+        /* chasse-bugs 2026-05-29 — a11y : aria-label contextuel pour
+           screenreader (le texte "Ouvrir" seul n'expose pas la cible)
+           (cf. docs/audits/chasse_bugs_action-center-v4_2026_05_29.md) */
         <a
           href="#"
           onClick={(e) => e.preventDefault()}
+          aria-label={`${LINKS_COPY.linkActionOpen} ${moduleLabel} ${truncatedId || ''}`.trim()}
           className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.06em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sol-ink-900)]"
           style={{
             color: 'var(--sol-ink-900)',
