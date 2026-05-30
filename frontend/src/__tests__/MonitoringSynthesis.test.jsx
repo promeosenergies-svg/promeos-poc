@@ -220,14 +220,17 @@ describe('MonitoringSynthesisStrip — doctrine zéro calcul métier', () => {
     expect(src).toContain("from '../ui/energy/MonitoringSynthesisStrip'");
   });
 
-  it('Critère 9 : confidenceDisplay reste justifié (climateConf hors scope synthesis)', () => {
-    const { readFileSync } = require('fs');
+  it('Critère 9 : P2.1 — confidenceDisplay.js supprimé, helper déplacé sous pages/monitoring/', () => {
+    const { existsSync, readFileSync } = require('fs');
     const { resolve } = require('path');
-    const src = readFileSync(resolve(__dirname, '../pages/MonitoringPage.jsx'), 'utf8');
-    // computeConfidence est encore appelé — il sert au climate scatter
-    // (r², n_points) qui n'est PAS couvert par /api/energy/synthesis.
-    // La strip P1.S3b consomme data_quality_score directement sans
-    // passer par computeConfidence.
+    // Le fichier utils/confidenceDisplay.js n'existe plus (P2.1).
+    expect(existsSync(resolve(__dirname, '../utils/confidenceDisplay.js'))).toBe(false);
+    // Le helper est désormais sous pages/monitoring/.
+    expect(
+      existsSync(resolve(__dirname, '../pages/monitoring/monitoringConfidenceHelper.js'))
+    ).toBe(true);
+    // La strip P1.S3b consomme toujours data_quality_score directement
+    // sans passer par computeConfidence.
     const stripSrc = readFileSync(
       resolve(__dirname, '../ui/energy/MonitoringSynthesisStrip.jsx'),
       'utf8'

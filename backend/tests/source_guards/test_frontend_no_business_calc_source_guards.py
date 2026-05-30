@@ -187,14 +187,27 @@ HELPER_WHITELIST: dict[str, str] = {
         "pour accepter scope filter params (P1.S3). Documentation "
         "doctrine + migration cible dans le fichier."
     ),
-    "frontend/src/utils/confidenceDisplay.js": (
-        "Helper P1.S2b — `computeConfidence` extrait de MonitoringPage. "
-        "Composition COSMÉTIQUE de signaux pré-calculés backend "
-        "(r² climate, n_points, coverage_pct) en badge UI {level, pct, "
-        "reason}. Migration cible P1.S3 : payload "
-        "/api/energy/synthesis.kpis.data_quality_score consommé directement. "
-        "Documentation doctrine + migration in-file."
-    ),
+    # ════════════════════════════════════════════════════════════════════
+    # Sprint Énergie P2.1 (2026-05-30) — entrée
+    # `frontend/src/utils/confidenceDisplay.js` RETIRÉE de HELPER_WHITELIST.
+    #
+    # Le fichier `utils/confidenceDisplay.js` a été SUPPRIMÉ et son
+    # contenu déplacé dans
+    # `frontend/src/pages/monitoring/monitoringConfidenceHelper.js`
+    # (hors du scan glob `_energy_page_files()` ci-dessous, donc hors
+    # surveillance source-guard énergie).
+    #
+    # Réduction effective : HELPER_WHITELIST applicative passe de 3 à
+    # 2 entrées. Le helper `computeConfidence` reste co-localisé avec
+    # son unique consommateur MonitoringPage.jsx mais ne fait plus
+    # partie de la surface globale `utils/`.
+    #
+    # Cible de suppression complète : P2.x — création d'un endpoint
+    # backend `/api/energy/climate-scatter` qui exposerait `confidence`
+    # déjà pré-calculée + retrait des 6 usages
+    # `kpiStatusWithConfidence` dans MonitoringPage (refactor de gros
+    # ampleur non couvert par P2.1).
+    # ════════════════════════════════════════════════════════════════════
 }
 
 
