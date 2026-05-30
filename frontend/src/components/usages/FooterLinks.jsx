@@ -95,7 +95,7 @@ export default function FooterLinks({ archetypeFilter, dashboard }) {
       title: 'Factures',
       icon: '🧾',
       sub: invoiceCount > 0 ? `${plural(invoiceCount, 'facture')} · 12 mois` : 'Suivi & anomalies',
-      kpi: uncoveredPct > 5 ? `${uncoveredPct}% non ventilé` : invoiceCount > 0 ? 'OK' : null,
+      kpi: uncoveredPct > 5 ? `${uncoveredPct}% non ventilé` : invoiceCount > 0 ? 'Conforme' : null,
       kpiStyle: uncoveredPct > 5 ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600',
       to: `/bill-intel${scope}`,
     },
