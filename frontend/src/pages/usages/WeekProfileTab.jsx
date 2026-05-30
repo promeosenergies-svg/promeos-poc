@@ -23,7 +23,17 @@ import { getWeekProfile } from '../../services/api/energy';
 import KpiCardWithProvenance from '../../ui/energy/KpiCardWithProvenance';
 import WeekProfileHeatmap from '../../ui/energy/WeekProfileHeatmap';
 import SiteRequiredState from '../../ui/energy/SiteRequiredState';
+// Sprint Énergie P2.2 (2026-05-30) — cross-link Conformité (données R.174-22).
+import EnergyCrossLinks from '../../ui/energy/EnergyCrossLinks';
 import { EmptyState, SkeletonCard } from '../../ui';
+
+const WEEK_PROFILE_CROSS_LINKS = [
+  {
+    kind: 'conformite',
+    to: '/conformite?tab=donnees',
+    label: 'Voir données réglementaires',
+  },
+];
 
 const KPI_ORDER = ['highest_day', 'highest_hour', 'night_baseload_kw', 'weekend_consumption_pct'];
 
@@ -263,6 +273,10 @@ export default function WeekProfileTab({ days = DEFAULT_DAYS, daysOverride }) {
           provenance={payload?.provenance}
           ariaLabel="Semaine type — heatmap consommation lundi à dimanche × 0h à 23h"
         />
+
+        {/* Sprint Énergie P2.2 (2026-05-30) — cross-link Conformité :
+            week-profile = données utiles à la conformité (R.174-22). */}
+        <EnergyCrossLinks links={WEEK_PROFILE_CROSS_LINKS} testId="week-profile-cross-links" />
       </div>
     </div>
   );

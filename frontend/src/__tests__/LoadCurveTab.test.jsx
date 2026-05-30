@@ -187,6 +187,17 @@ describe('LoadCurveTab — doctrine zéro calcul métier + routing', () => {
     expect(src).toContain("'Courbe de charge'");
   });
 
+  it('Sprint P2.2 : cross-link Action V4 ajouté avec wording générique', () => {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const src = readFileSync(resolve(__dirname, '../pages/consumption/LoadCurveTab.jsx'), 'utf8');
+    expect(src).toMatch(/import\s+EnergyCrossLinks/);
+    expect(src).toMatch(/LOAD_CURVE_CROSS_LINKS\s*=\s*\[/);
+    expect(src).toContain("'/action-center-v4'");
+    expect(src).toContain("Créer une action d'analyse");
+    expect(src).toMatch(/testId="loadcurve-cross-links"/);
+  });
+
   it('Critère 6 : aucune nouvelle entrée dans le rail NavRegistry', () => {
     const { readFileSync } = require('fs');
     const { resolve } = require('path');

@@ -117,3 +117,36 @@ describe('MonitoringPageSplit — comportement utilisateur préservé', () => {
     expect(src).toMatch(/export\s+const\s+CLIMATE_LABEL_FR\s*=/);
   });
 });
+
+describe('MonitoringPage — Sprint P2.2 cross-links transverses', () => {
+  it('MonitoringPage importe EnergyCrossLinks', () => {
+    const src = readSrc('../pages/MonitoringPage.jsx');
+    expect(src).toMatch(
+      /import\s+EnergyCrossLinks\s+from\s+['"]\.\.\/ui\/energy\/EnergyCrossLinks['"]/
+    );
+  });
+
+  it('Constante MONITORING_CROSS_LINKS déclare les 2 liens canoniques', () => {
+    const src = readSrc('../pages/MonitoringPage.jsx');
+    expect(src).toMatch(/MONITORING_CROSS_LINKS\s*=\s*\[/);
+    expect(src).toContain("'/action-center-v4'");
+    expect(src).toContain("'Créer une action'");
+    expect(src).toContain("'/conformite/tertiaire'");
+    expect(src).toContain("'Voir trajectoire Décret Tertiaire'");
+  });
+
+  it('EnergyCrossLinks rendu avec testId="monitoring-cross-links"', () => {
+    const src = readSrc('../pages/MonitoringPage.jsx');
+    expect(src).toMatch(
+      /<EnergyCrossLinks\s+links=\{MONITORING_CROSS_LINKS\}\s+testId="monitoring-cross-links"\s*\/>/
+    );
+  });
+
+  it('Cross-links rendus APRÈS MonitoringSynthesisStrip (pied de synthèse)', () => {
+    const src = readSrc('../pages/MonitoringPage.jsx');
+    const stripIdx = src.indexOf('<MonitoringSynthesisStrip');
+    const crossIdx = src.indexOf('<EnergyCrossLinks');
+    expect(stripIdx).toBeGreaterThan(0);
+    expect(crossIdx).toBeGreaterThan(stripIdx);
+  });
+});
