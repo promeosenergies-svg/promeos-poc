@@ -743,7 +743,15 @@ const PatrimoineWizard = ({ onClose }) => {
                           >
                             {sev.label}
                           </span>
-                          <span className="text-sm font-medium text-gray-800">{f.rule_id}</span>
+                          {/* chasse-bugs 2026-05-29 — humanise rule_id (jargon technique
+                              exposé au user). Helper inline en attendant un dictionnaire
+                              FR exhaustif des rules wizard (cf. docs/audits/chasse_bugs_
+                              patrimoine_2026_05_29.md Cat 3 critique) */}
+                          <span className="text-sm font-medium text-gray-800">
+                            {(f.rule_id || '')
+                              .replace(/_/g, ' ')
+                              .replace(/^\w/, (c) => c.toUpperCase())}
+                          </span>
                           {f.resolved && <CheckCircle2 size={14} className="text-green-500" />}
                         </div>
                         {!f.resolved && <FixBtn f={f} ev={ev} onFix={doFix} />}

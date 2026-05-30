@@ -39,9 +39,9 @@ import { scopeKicker } from '../utils/format';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import { useToast } from '../ui';
-import ErrorState from '../ui/ErrorState'; // eslint-disable-line no-unused-vars
+// chasse-bugs 2026-05-29 — imports inutilisés retirés (ErrorState + useExpertMode)
+// cf. docs/audits/chasse_bugs_patrimoine_2026_05_29.md Cat 10 mineur
 import { useScope } from '../contexts/ScopeContext';
-import { useExpertMode } from '../contexts/ExpertModeContext'; // eslint-disable-line no-unused-vars
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import SiteCreationWizard from '../components/SiteCreationWizard';
@@ -162,7 +162,6 @@ export default function Patrimoine() {
   const location = useLocation();
   const [sp, setSp] = useSearchParams();
   const { scopedSites, sitesLoading, scope, org, refreshSites } = useScope();
-  const { isExpert } = useExpertMode(); // eslint-disable-line no-unused-vars
   const searchRef = useRef(null);
   const [dataVersion, setDataVersion] = useState(0);
 
@@ -2201,7 +2200,13 @@ function SiteDrawerContent({
             warn={site.risque_eur > 0}
           />
           <MetricPill label="Surface" value={fmtArea(site.surface_m2)} />
-          <MetricPill label="Compteurs" value={site.nb_compteurs != null ? site.nb_compteurs : 0} />
+          {/* chasse-bugs 2026-05-29 — KPI mensonger : '0' affiché alors que
+              donnée manquante (cf. docs/audits/chasse_bugs_patrimoine_2026_05_29.md
+              Cat 7 majeur — onboarding mauvais inventaire compteurs) */}
+          <MetricPill
+            label="Compteurs"
+            value={site.nb_compteurs != null ? site.nb_compteurs : '—'}
+          />
         </div>
       </div>
 
@@ -2393,4 +2398,3 @@ function DrawerActionBtn({ icon: Icon, color, title, desc, onClick, primary }) {
     </button>
   );
 }
-
