@@ -22,7 +22,15 @@ import EnergyFilterBar from '../../ui/energy/EnergyFilterBar';
 import KpiCardWithProvenance from '../../ui/energy/KpiCardWithProvenance';
 import LoadCurveChart from '../../ui/energy/LoadCurveChart';
 import TopPeaksTable from '../../ui/energy/TopPeaksTable';
+// Sprint Énergie P2.2 (2026-05-30) — cross-link Centre d'action V4.
+// Wording générique car TopPeaksTable est indisponible côté API
+// pour cette version (cf. brief P1.S3a).
+import EnergyCrossLinks from '../../ui/energy/EnergyCrossLinks';
 import { ErrorState } from '../../ui';
+
+const LOAD_CURVE_CROSS_LINKS = [
+  { kind: 'action', to: '/action-center-v4', label: "Créer une action d'analyse" },
+];
 
 const DEFAULT_PERIOD = '30d';
 const DEFAULT_GRANULARITY = 'hour';
@@ -231,6 +239,11 @@ export default function LoadCurveTab() {
           />
 
           <TopPeaksTable points={null} granularity={filters.granularity} loading={loading} />
+
+          {/* Sprint Énergie P2.2 (2026-05-30) — cross-link Action V4
+              avec wording générique car TopPeaksTable est indisponible
+              côté API. Pas de prétention qu'un pic a été détecté. */}
+          <EnergyCrossLinks links={LOAD_CURVE_CROSS_LINKS} testId="loadcurve-cross-links" />
         </>
       )}
     </div>

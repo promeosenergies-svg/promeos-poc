@@ -15,12 +15,27 @@
  * 8. status normal/vigilance/critique/missing propagé ;
  * 9. aucun calcul métier interdit dans WeekProfileTab.
  */
+import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('../services/api/energy', () => ({
   getWeekProfile: vi.fn(),
 }));
+
+// Sprint P2.2 — EnergyCrossLinks utilise <Link>. Override comme <a>
+// pour éviter besoin de MemoryRouter wrapper. Préserve actual export.
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    Link: ({ to, children, replace: _replace, state: _state, ...rest }) => (
+      <a href={to} {...rest}>
+        {children}
+      </a>
+    ),
+  };
+});
 
 const mockSetSite = vi.fn();
 let _mockScopeOverride = null;
@@ -265,6 +280,17 @@ describe('WeekProfileTab — doctrine zéro calcul métier (critère 9)', () => 
     // L'appel API et le rendu KPI fournis backend sont OK
     expect(src).toContain('getWeekProfile');
     expect(src).toContain('KpiCardWithProvenance');
+  });
+
+  it('Sprint P2.2 : cross-link Conformité (données R.174-22) ajouté', () => {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const src = readFileSync(resolve(__dirname, '../pages/usages/WeekProfileTab.jsx'), 'utf8');
+    expect(src).toMatch(/import\s+EnergyCrossLinks/);
+    expect(src).toMatch(/WEEK_PROFILE_CROSS_LINKS\s*=\s*\[/);
+    expect(src).toContain("'/conformite?tab=donnees'");
+    expect(src).toContain("'Voir données réglementaires'");
+    expect(src).toMatch(/testId="week-profile-cross-links"/);
   });
 
   it('UsagesDashboardPage importe WeekProfileTab et déclare le tab', () => {

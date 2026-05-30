@@ -83,6 +83,19 @@ import SolBriefingHead from '../ui/sol/SolBriefingHead';
 // /api/energy/synthesis. Composant autonome avec 10 KPI canoniques +
 // narrative + provenance, sans calcul métier frontend.
 import MonitoringSynthesisStrip from '../ui/energy/MonitoringSynthesisStrip';
+// Sprint Énergie P2.2 (2026-05-30) — cross-links transverses Énergie
+// vers Centre d'action V4 + Conformité Décret Tertiaire. Insertion en
+// pied de section synthèse, autorisée après split P2.1.
+import EnergyCrossLinks from '../ui/energy/EnergyCrossLinks';
+
+const MONITORING_CROSS_LINKS = [
+  { kind: 'action', to: '/action-center-v4', label: 'Créer une action' },
+  {
+    kind: 'conformite',
+    to: '/conformite/tertiaire',
+    label: 'Voir trajectoire Décret Tertiaire',
+  },
+];
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 import { usePageBriefing } from '../hooks/usePageBriefing';
 // Sprint 2 Vague B ét6' — labels FR centralisés (label_registries cross-vue).
@@ -2110,6 +2123,13 @@ export default function MonitoringPage() {
         period="30d"
         compare="none"
       />
+
+      {/* Sprint Énergie P2.2 (2026-05-30) — cross-links en pied de
+          section synthèse : Centre d'action + Conformité Décret Tertiaire.
+          Sobre, sans calcul d'impact, sans promesse d'économie. */}
+      <div className="mt-3">
+        <EnergyCrossLinks links={MONITORING_CROSS_LINKS} testId="monitoring-cross-links" />
+      </div>
 
       {error && <ErrorState message={error} onRetry={loadAll} />}
 
