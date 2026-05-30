@@ -51,10 +51,13 @@ function ApiErrorState({ error, onRetry }) {
               {hint}
             </p>
           )}
+          {/* chasse-bugs 2026-05-29 — vocabulaire FR, jargon backend (`correlation_id`)
+              remplacé par `Réf.` ; valeur reste copyable pour support
+              (cf. docs/audits/chasse_bugs_usages_2026_05_29.md Cat 3 critique) */}
           <div className="flex flex-wrap items-center gap-3 text-[10px] text-red-500 mt-1">
-            <span data-testid="error-code">code: {code}</span>
+            <span data-testid="error-code">Code : {code}</span>
             {correlationId && (
-              <span data-testid="error-correlation-id">correlation_id: {correlationId}</span>
+              <span data-testid="error-correlation-id">Réf. : {correlationId}</span>
             )}
           </div>
         </div>
