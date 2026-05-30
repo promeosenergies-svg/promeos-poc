@@ -26,6 +26,7 @@ import { getCostVsContract } from '../../services/api/energy';
 import KpiCardWithProvenance from '../../ui/energy/KpiCardWithProvenance';
 import CostVsContractCard from '../../ui/energy/CostVsContractCard';
 import PriceDecompositionTable from '../../ui/energy/PriceDecompositionTable';
+import SiteRequiredState from '../../ui/energy/SiteRequiredState';
 import { EmptyState, SkeletonCard } from '../../ui';
 
 const KPI_ORDER = [
@@ -144,9 +145,13 @@ export default function CostContractTab({
   period = DEFAULT_PERIOD,
   scenarios = DEFAULT_SCENARIOS,
 }) {
-  const { selectedSiteId, scope } = useScope();
+  const { selectedSiteId, scope, setSite } = useScope();
   const orgId = scope?.orgId;
   const siteId = selectedSiteId;
+  // Sprint P1.S6 — la vue Coût & contrat n'est servie qu'au niveau
+  // site/meter (un contrat est rattaché à un site). Si pas de site
+  // sélectionné, on n'appelle pas l'API et on affiche SiteRequiredState.
+  const hasSite = siteId != null;
 
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -154,15 +159,21 @@ export default function CostContractTab({
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
+    if (!hasSite) {
+      setPayload(null);
+      setError(null);
+      setLoading(false);
+      return undefined;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
     const params = {
-      scope: siteId ? 'site' : 'org',
+      scope: 'site',
+      scope_id: siteId,
       period,
       scenarios,
     };
-    if (siteId != null) params.scope_id = siteId;
     if (orgId != null) params.org_id = orgId;
     getCostVsContract(params)
       .then((data) => {
@@ -178,13 +189,26 @@ export default function CostContractTab({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [siteId, orgId, period, scenarios, reloadToken]);
+  }, [hasSite, siteId, orgId, period, scenarios, reloadToken]);
 
   const kpis = payload?.kpis || {};
   const orderedKpis = useMemo(
     () => KPI_ORDER.filter((key) => kpis[key]).map((key) => ({ key, kpi: kpis[key] })),
     [kpis]
   );
+
+  if (!hasSite) {
+    return (
+      <div data-testid="cost-contract-tab">
+        <TabHeader />
+        <div className="mt-4">
+          <SiteRequiredState
+            onChooseSite={typeof setSite === 'function' ? () => setSite(null) : undefined}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !payload) {
     return (

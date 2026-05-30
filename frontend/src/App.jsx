@@ -79,6 +79,9 @@ const LoadCurveTab = lazy(() => import('./pages/consumption/LoadCurveTab'));
 // Sprint Énergie P1.S5 (2026-05-30) — onglet Coût & contrat branché sur
 // /api/energy/cost-vs-contract. Route nested sous /consommations.
 const CostContractTab = lazy(() => import('./pages/consumption/CostContractTab'));
+// Sprint Énergie P1.S6 (2026-05-30) — onglet Marché & exposition branché
+// sur /api/energy/market-exposure. Route nested sous /consommations.
+const MarketExposureTab = lazy(() => import('./pages/consumption/MarketExposureTab'));
 const ActivationPage = lazy(() => import('./pages/ActivationPage'));
 const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDashboardPage'));
 const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizardPage'));
@@ -472,6 +475,17 @@ function App() {
                                         element={
                                           <PageSuspense>
                                             <CostContractTab />
+                                          </PageSuspense>
+                                        }
+                                      />
+                                      {/* Sprint Énergie P1.S6 (2026-05-30) —
+                                          onglet Marché & exposition branché sur
+                                          /api/energy/market-exposure. */}
+                                      <Route
+                                        path="marche"
+                                        element={
+                                          <PageSuspense>
+                                            <MarketExposureTab />
                                           </PageSuspense>
                                         }
                                       />

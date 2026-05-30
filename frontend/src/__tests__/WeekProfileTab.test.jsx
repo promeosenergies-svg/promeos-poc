@@ -22,12 +22,23 @@ vi.mock('../services/api/energy', () => ({
   getWeekProfile: vi.fn(),
 }));
 
+const mockSetSite = vi.fn();
+let _mockScopeOverride = null;
+
 vi.mock('../contexts/ScopeContext', () => ({
-  useScope: () => ({
-    selectedSiteId: 42,
-    scope: { orgId: 1, entiteId: null, portefeuilleId: null, siteId: 42 },
-  }),
+  useScope: () =>
+    _mockScopeOverride
+      ? { ...{ setSite: mockSetSite }, ..._mockScopeOverride }
+      : {
+          selectedSiteId: 42,
+          scope: { orgId: 1, entiteId: null, portefeuilleId: null, siteId: 42 },
+          setSite: mockSetSite,
+        },
 }));
+
+function setScope(next) {
+  _mockScopeOverride = next;
+}
 
 import WeekProfileTab, { KPI_ORDER, DEFAULT_DAYS } from '../pages/usages/WeekProfileTab';
 import { getWeekProfile } from '../services/api/energy';
@@ -92,6 +103,8 @@ const SAMPLE_PAYLOAD = {
 describe('WeekProfileTab — checklist QA S4', () => {
   beforeEach(() => {
     getWeekProfile.mockReset();
+    mockSetSite.mockReset();
+    setScope(null);
   });
   afterEach(() => cleanup());
 
@@ -209,6 +222,17 @@ describe('WeekProfileTab — checklist QA S4', () => {
     const banner = screen.getByTestId('week-profile-partial').textContent || '';
     expect(banner).toContain('Données partielles');
     expect(banner).toContain('12 cellules estimées');
+  });
+
+  it('Sprint P1.S6 — scope=org (pas de site) : SiteRequiredState rendu, aucun appel API', () => {
+    setScope({
+      selectedSiteId: null,
+      scope: { orgId: 1, entiteId: null, portefeuilleId: null, siteId: null },
+    });
+    render(<WeekProfileTab />);
+    expect(screen.getByTestId('site-required-state')).toBeTruthy();
+    expect(screen.getByText(/Sélectionnez un site/i)).toBeTruthy();
+    expect(getWeekProfile).not.toHaveBeenCalled();
   });
 
   it('Header microcopy FR conforme au brief', async () => {
