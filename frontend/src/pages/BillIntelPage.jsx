@@ -33,7 +33,9 @@ import SolNarrativeText from '../ui/sol/SolNarrativeText';
 import SolBriefingHead from '../ui/sol/SolBriefingHead';
 import SolBriefingFooter from '../ui/sol/SolBriefingFooter';
 // Sprint Grammaire v1 Phase 3.3 LEDGER — primitifs Sol v1.1 doctrine §5.6
-import { DecisionEvidenceCard, Term } from '../components/grammar';
+// chasse-bugs 2026-05-29 — Term retiré (jamais utilisé dans cette page)
+// cf. docs/audits/chasse_bugs_bill-intel_2026_05_29.md Cat 10
+import { DecisionEvidenceCard } from '../components/grammar';
 // Phase 3.3.fix P2 #4 — SoT mapping insight→DEC dans decisionAdapters
 import { buildDecFromBillingInsight } from '../components/grammar/decisionAdapters';
 import { usePageBriefing } from '../hooks/usePageBriefing';
