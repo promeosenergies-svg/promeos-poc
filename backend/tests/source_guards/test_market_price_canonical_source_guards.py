@@ -152,3 +152,137 @@ class TestMarketPriceCanonical:
         """Toute entrée whitelist doit avoir une justification non vide."""
         for path, reason in LEGACY_MARKET_PRICE_WHITELIST.items():
             assert reason and reason.strip(), f"WHITELIST entry '{path}' has empty justification."
+
+
+class TestMarketPriceCanonicalP2_3:
+    """Sprint Énergie P2.3 (2026-05-30) — durcissement migration MarketPrice.
+
+    Couverture renforcée :
+    - aucun fichier `backend/services/energy_orchestration/*` n'importe
+      `MarketPrice` (vérifie le SoT orchestration énergie).
+    - `market_data_service.py` n'importe pas MarketPrice si présent.
+    - `billing_service.py` n'importe pas MarketPrice.
+    - le modèle legacy porte le marquage DEPRECATED P2.3 explicite.
+    """
+
+    def test_energy_orchestration_no_market_price_import(self):
+        """Aucun import MarketPrice dans backend/services/energy_orchestration/.
+
+        Le SoT canonique pour la brique Énergie est MktPrice (cf. P1.S2d).
+        """
+        orchestration_dir = BACKEND / "services" / "energy_orchestration"
+        assert orchestration_dir.exists(), (
+            "backend/services/energy_orchestration/ introuvable — répertoire SoT brique Énergie manquant."
+        )
+        for py_file in sorted(orchestration_dir.rglob("*.py")):
+            rel = py_file.relative_to(REPO_ROOT).as_posix()
+            content = py_file.read_text(encoding="utf-8")
+            for pattern in FORBIDDEN_IMPORT_PATTERNS:
+                # Skip if just a comment mentioning the name (no import)
+                for match in pattern.finditer(content):
+                    line_no = content[: match.start()].count("\n") + 1
+                    line = content.split("\n")[line_no - 1]
+                    if line.strip().startswith("#"):
+                        continue
+                    pytest.fail(
+                        f"🔴 P2.3 — Import legacy MarketPrice dans SoT Énergie : "
+                        f"{rel}:{line_no} → « {match.group(0)[:80]} ». "
+                        f"Utiliser MktPrice depuis models.market_models."
+                    )
+
+    def test_billing_service_no_market_price_import(self):
+        """billing_service.py n'importe pas le modèle legacy MarketPrice.
+
+        Vérifié P2.3 : billing_service utilise MktPrice canonique pour
+        le calcul prix référence (priority 2 du resolve_reference_price).
+        """
+        billing = BACKEND / "services" / "billing_service.py"
+        if not billing.exists():
+            return
+        content = billing.read_text(encoding="utf-8")
+        for pattern in FORBIDDEN_IMPORT_PATTERNS:
+            for match in pattern.finditer(content):
+                line_no = content[: match.start()].count("\n") + 1
+                line = content.split("\n")[line_no - 1]
+                if line.strip().startswith("#"):
+                    continue
+                pytest.fail(
+                    f"🔴 P2.3 — billing_service.py importe MarketPrice legacy "
+                    f"ligne {line_no} : « {match.group(0)[:80]} ». "
+                    f"Utiliser MktPrice canonique."
+                )
+
+    def test_market_data_service_uses_canonical_if_exists(self):
+        """Si market_data_service existe, il utilise MktPrice (pas legacy)."""
+        candidates = [
+            BACKEND / "services" / "market_data_service.py",
+            BACKEND / "services" / "market_data" / "service.py",
+        ]
+        for path in candidates:
+            if not path.exists():
+                continue
+            content = path.read_text(encoding="utf-8")
+            for pattern in FORBIDDEN_IMPORT_PATTERNS:
+                for match in pattern.finditer(content):
+                    line_no = content[: match.start()].count("\n") + 1
+                    line = content.split("\n")[line_no - 1]
+                    if line.strip().startswith("#"):
+                        continue
+                    rel = path.relative_to(REPO_ROOT).as_posix()
+                    pytest.fail(f"🔴 P2.3 — {rel}:{line_no} importe MarketPrice legacy. Utiliser MktPrice canonique.")
+
+    def test_legacy_model_has_p2_3_deprecation_marker(self):
+        """Le modèle legacy porte le marquage DEPRECATED P2.3 renforcé."""
+        legacy_model = BACKEND / "models" / "market_price.py"
+        if not legacy_model.exists():
+            return
+        content = legacy_model.read_text(encoding="utf-8")
+        # Marqueur P2.3 explicite
+        assert "P2.3" in content, (
+            "models/market_price.py manque le marqueur Sprint P2.3 dans la "
+            "doctrine DEPRECATED. Ajouter référence sprint pour traçabilité."
+        )
+        # Lien vers source-guard
+        assert "test_market_price_canonical_source_guards" in content, (
+            "models/market_price.py doit référencer le nom du source-guard qui interdit ses imports applicatifs."
+        )
+
+    def test_models_init_marks_legacy_import_as_compat(self):
+        """models/__init__.py marque l'import legacy comme compat-only."""
+        init = BACKEND / "models" / "__init__.py"
+        content = init.read_text(encoding="utf-8")
+        # Doit avoir un commentaire DEPRECATED + un noqa: F401
+        # (l'import est nécessaire pour SQLAlchemy mais non utilisé directement)
+        idx = content.find("from .market_price import MarketPrice")
+        assert idx > -1, "Import MarketPrice attendu dans models/__init__.py."
+        # Le commentaire DEPRECATED P2.3 doit précéder l'import
+        preceding = content[max(0, idx - 600) : idx]
+        assert "DEPRECATED" in preceding.upper(), (
+            "models/__init__.py — l'import MarketPrice doit être précédé d'un commentaire DEPRECATED explicite."
+        )
+        # noqa: F401 nécessaire car l'import sert pour ORM seulement
+        line_after = content[idx : idx + 200]
+        assert "noqa" in line_after or "legacy" in line_after.lower(), (
+            "models/__init__.py — l'import MarketPrice doit porter `noqa: F401` "
+            "(import compat ORM, jamais utilisé directement) ou mention `legacy`."
+        )
+
+    def test_p2_3_doc_references_canonical_fields(self):
+        """La doctrine in-file mentionne les champs canoniques attendus."""
+        legacy_model = BACKEND / "models" / "market_price.py"
+        if not legacy_model.exists():
+            return
+        content = legacy_model.read_text(encoding="utf-8")
+        # Au moins 2 champs canoniques cités
+        canonical_fields = [
+            "market_type",
+            "zone",
+            "delivery_start",
+            "price_eur_mwh",
+        ]
+        found = sum(1 for f in canonical_fields if f in content)
+        assert found >= 3, (
+            f"La doctrine de market_price.py doit citer les champs canoniques "
+            f"MktPrice attendus (au moins 3 sur {canonical_fields}). "
+            f"Actuellement : {found}."
+        )
