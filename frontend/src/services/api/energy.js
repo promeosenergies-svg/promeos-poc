@@ -569,3 +569,31 @@ export const getCostVsContract = async (params = {}) => {
   const response = await api.get('/energy/cost-vs-contract', { params });
   return response.data;
 };
+
+/**
+ * GET /api/energy/market-exposure — vue Marché & exposition
+ * (score exposition, top heures chères, baseload comparison,
+ * heures favorables, simulation indicative).
+ *
+ * Sprint Énergie P1.S6 — helper canonique consommé par
+ * `frontend/src/pages/consumption/MarketExposureTab.jsx`. Aucun calcul
+ * métier frontend : tout (KPI, score, top heures, prix négatifs,
+ * baseload, simulation) vient du backend.
+ *
+ * @param {object} params - { scope, scope_id, period, market, zone,
+ *                            baseload, org_id }
+ *   - scope     : 'site' | 'meter' (org NON supporté côté backend)
+ *   - scope_id  : id du périmètre
+ *   - period    : '7d' | '30d' | '90d' | '12m' (défaut '12m')
+ *   - market    : 'day_ahead' | 'intraday' | 'future_baseload' |
+ *                 'future_peakload' (défaut 'day_ahead')
+ *   - zone      : 'FR' | 'DE_LU' | 'BE' | 'ES' | 'NL' | 'GB' | 'CH' |
+ *                 'IT_NORTH' (défaut 'FR')
+ *   - baseload  : bool — inclure la comparaison baseload (défaut true)
+ *   - org_id    : optionnel — force l'org-scoping côté backend
+ * @returns {Promise<EnergyMarketExposureResponse>}
+ */
+export const getMarketExposure = async (params = {}) => {
+  const response = await api.get('/energy/market-exposure', { params });
+  return response.data;
+};

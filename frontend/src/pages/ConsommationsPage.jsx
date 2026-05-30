@@ -10,7 +10,7 @@
  * reste accessible via module admin NavRegistry + ⌘K search.
  */
 import { NavLink, Outlet } from 'react-router-dom';
-import { Activity, BarChart3, ReceiptText, Upload, Zap, Building2 } from 'lucide-react';
+import { Activity, BarChart3, LineChart, ReceiptText, Upload, Zap, Building2 } from 'lucide-react';
 import { PageShell } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 
@@ -19,11 +19,15 @@ import { useScope } from '../contexts/ScopeContext';
 // rail modifié — onglet interne sous /consommations (architecture nested).
 // Sprint Énergie P1.S5 (2026-05-30) — ajout onglet « Coût & contrat »
 // branché sur /api/energy/cost-vs-contract. Doctrine zéro calcul métier FE.
+// Sprint Énergie P1.S6 (2026-05-30) — ajout onglet « Marché & exposition »
+// branché sur /api/energy/market-exposure (score expo, top heures chères,
+// baseload comparison, heures favorables). Doctrine zéro calcul métier FE.
 const TABS = [
   { to: '/consommations/portfolio', label: 'Portefeuille', icon: Building2 },
   { to: '/consommations/explorer', label: 'Explorer', icon: BarChart3 },
   { to: '/consommations/courbe', label: 'Courbe de charge', icon: Activity },
   { to: '/consommations/cout-contrat', label: 'Coût & contrat', icon: ReceiptText },
+  { to: '/consommations/marche', label: 'Marché & exposition', icon: LineChart },
   { to: '/consommations/import', label: 'Import', icon: Upload },
 ];
 

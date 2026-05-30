@@ -23,12 +23,23 @@ vi.mock('../services/api/energy', () => ({
   getCostVsContract: vi.fn(),
 }));
 
+const mockSetSite = vi.fn();
+let _mockScopeOverride = null;
+
 vi.mock('../contexts/ScopeContext', () => ({
-  useScope: () => ({
-    selectedSiteId: 42,
-    scope: { orgId: 1, entiteId: null, portefeuilleId: null, siteId: 42 },
-  }),
+  useScope: () =>
+    _mockScopeOverride
+      ? { ...{ setSite: mockSetSite }, ..._mockScopeOverride }
+      : {
+          selectedSiteId: 42,
+          scope: { orgId: 1, entiteId: null, portefeuilleId: null, siteId: 42 },
+          setSite: mockSetSite,
+        },
 }));
+
+function setScope(next) {
+  _mockScopeOverride = next;
+}
 
 import CostContractTab, {
   KPI_ORDER,
@@ -124,6 +135,8 @@ const SAMPLE_PAYLOAD = {
 describe('CostContractTab — checklist QA S5', () => {
   beforeEach(() => {
     getCostVsContract.mockReset();
+    mockSetSite.mockReset();
+    setScope(null);
   });
   afterEach(() => cleanup());
 
@@ -248,6 +261,17 @@ describe('CostContractTab — checklist QA S5', () => {
     const banner = screen.getByTestId('cost-contract-partial').textContent || '';
     expect(banner).toContain('Simulation partielle');
     expect(banner).toContain('prix spot fallback');
+  });
+
+  it('Sprint P1.S6 — scope=org (pas de site) : SiteRequiredState rendu, aucun appel API', () => {
+    setScope({
+      selectedSiteId: null,
+      scope: { orgId: 1, entiteId: null, portefeuilleId: null, siteId: null },
+    });
+    render(<CostContractTab />);
+    expect(screen.getByTestId('site-required-state')).toBeTruthy();
+    expect(screen.getByText(/Sélectionnez un site/i)).toBeTruthy();
+    expect(getCostVsContract).not.toHaveBeenCalled();
   });
 
   it('Header microcopy FR conforme brief', async () => {

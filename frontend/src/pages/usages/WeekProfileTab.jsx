@@ -22,6 +22,7 @@ import { useScope } from '../../contexts/ScopeContext';
 import { getWeekProfile } from '../../services/api/energy';
 import KpiCardWithProvenance from '../../ui/energy/KpiCardWithProvenance';
 import WeekProfileHeatmap from '../../ui/energy/WeekProfileHeatmap';
+import SiteRequiredState from '../../ui/energy/SiteRequiredState';
 import { EmptyState, SkeletonCard } from '../../ui';
 
 const KPI_ORDER = ['highest_day', 'highest_hour', 'night_baseload_kw', 'weekend_consumption_pct'];
@@ -124,10 +125,14 @@ function LoadingBlock() {
 }
 
 export default function WeekProfileTab({ days = DEFAULT_DAYS, daysOverride }) {
-  const { selectedSiteId, scope } = useScope();
+  const { selectedSiteId, scope, setSite } = useScope();
   const orgId = scope?.orgId;
   const siteId = selectedSiteId;
   const effectiveDays = daysOverride ?? days;
+  // Sprint P1.S6 — la vue Semaine type n'est servie qu'au niveau site/meter.
+  // Si pas de site sélectionné, on n'appelle pas l'API (évite remontée
+  // ENERGY_SCOPE_INVALID en rouge) et on affiche un SiteRequiredState métier.
+  const hasSite = siteId != null;
 
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -136,14 +141,20 @@ export default function WeekProfileTab({ days = DEFAULT_DAYS, daysOverride }) {
   const [requestedDays, setRequestedDays] = useState(effectiveDays);
 
   useEffect(() => {
+    if (!hasSite) {
+      setPayload(null);
+      setError(null);
+      setLoading(false);
+      return undefined;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
     const params = {
-      scope: siteId ? 'site' : 'org',
+      scope: 'site',
+      scope_id: siteId,
       days: requestedDays,
     };
-    if (siteId != null) params.scope_id = siteId;
     if (orgId != null) params.org_id = orgId;
     getWeekProfile(params)
       .then((data) => {
@@ -159,13 +170,26 @@ export default function WeekProfileTab({ days = DEFAULT_DAYS, daysOverride }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [siteId, orgId, requestedDays, reloadToken]);
+  }, [hasSite, siteId, orgId, requestedDays, reloadToken]);
 
   const kpis = payload?.kpis || {};
   const orderedKpis = useMemo(
     () => KPI_ORDER.filter((key) => kpis[key]).map((key) => ({ key, kpi: kpis[key] })),
     [kpis]
   );
+
+  if (!hasSite) {
+    return (
+      <div data-testid="week-profile-tab">
+        <TabHeader />
+        <div className="p-5">
+          <SiteRequiredState
+            onChooseSite={typeof setSite === 'function' ? () => setSite(null) : undefined}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !payload) {
     return (
