@@ -11,8 +11,9 @@
  * 6. aucune nouvelle route/menu ;
  * 7. source-guard zéro calcul métier toujours vert (vérif fichiers).
  */
+import React from 'react';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../services/api/energy', () => ({

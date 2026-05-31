@@ -30,8 +30,20 @@ from schemas.energy_orchestration import (
     EnergyPeriod,
     EnergyProvenance,
     EnergyScope,
+    # Sprint Énergie P3.1 — pics + profil moyen par jour
+    EnergyTopPeak,
+    EnergyWeekdayCurve,
+    EnergyWeekdayDecomposition,
+    EnergyWeekdayPoint,
+    EnergyWeekdayWeekendComparison,
 )
 from services.energy_orchestration.synthesis import _build_provenance, resolve_period
+
+
+# Sprint Énergie P3.1 — labels FR canoniques jours de semaine.
+_WEEKDAY_LABELS_FR = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+_HOUR_LABELS_FR = [f"{h:02d}h" for h in range(24)]
+_MAX_TOP_PEAKS = 5
 
 
 TZ_PARIS = ZoneInfo("Europe/Paris")
@@ -140,6 +152,12 @@ def build_loadcurve(
 
     kpis = _compute_loadcurve_kpis(series, scope, period, granularity)
 
+    # Sprint Énergie P3.1 — pics + profil moyen par jour
+    top_peaks = _compute_top_peaks(series, period)
+    weekday_overlay = _compute_weekday_overlay(series, period, granularity)
+    weekday_decomposition = _compute_weekday_decomposition(series, period)
+    weekday_weekend_comparison = _compute_weekday_weekend_comparison(series, period)
+
     empty_state = None
     if not series:
         empty_state = (
@@ -170,9 +188,282 @@ def build_loadcurve(
         series=series,
         series_compare=[],
         kpis=kpis,
+        top_peaks=top_peaks,
+        weekday_overlay=weekday_overlay,
+        weekday_decomposition=weekday_decomposition,
+        weekday_weekend_comparison=weekday_weekend_comparison,
         provenance=provenance,
         warnings=warnings,
         empty_state=empty_state,
+    )
+
+
+# ── Sprint Énergie P3.1 helpers ──────────────────────────────────────
+
+
+def _classify_weekday_state(share_pct: Optional[float]) -> str:
+    """Classifie un jour par sa part dans la consommation totale.
+
+    Doctrine zéro calcul métier : la borne est un seuil cosmétique
+    d'affichage (pas un KPI métier).
+    """
+    if share_pct is None:
+        return "inactif"
+    if share_pct >= 25.0:
+        return "critique"
+    if share_pct >= 18.0:
+        return "vigilance"
+    return "sain"
+
+
+def _localize_to_paris(dt: datetime) -> datetime:
+    """Convertit un timestamp en Europe/Paris (préserve la valeur s'il y est déjà)."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=TZ_PARIS)
+    return dt.astimezone(TZ_PARIS)
+
+
+def _compute_top_peaks(
+    series: list[EnergyLoadCurvePoint],
+    period: EnergyPeriod,
+) -> list[EnergyTopPeak]:
+    """Classement des pics de puissance par kw_avg décroissant.
+
+    Doctrine : tri pur sans calcul métier neuf. Top 5 maximum.
+    """
+    valid = [p for p in series if p.kw_avg is not None]
+    if not valid:
+        return []
+    sorted_pts = sorted(valid, key=lambda p: p.kw_avg or 0.0, reverse=True)
+    peaks: list[EnergyTopPeak] = []
+    for rank, point in enumerate(sorted_pts[:_MAX_TOP_PEAKS], start=1):
+        local = _localize_to_paris(point.timestamp)
+        weekday_label = _WEEKDAY_LABELS_FR[local.weekday()]
+        hour_label = _HOUR_LABELS_FR[local.hour]
+        period_label = f"{weekday_label} {hour_label}"
+        # Action conseillée : contexte d'analyse, non engageant
+        if rank == 1:
+            recommended_action = "Analyser l'usage pilotable sur cette plage : déplacement ou lissage potentiel."
+        else:
+            recommended_action = "Vérifier la récurrence et identifier le poste de consommation."
+        # Contexte : pic récurrent si même créneau jour+heure dans autres top
+        context: Optional[str] = None
+        same_slot = sum(
+            1
+            for p in sorted_pts[:_MAX_TOP_PEAKS]
+            if _localize_to_paris(p.timestamp).weekday() == local.weekday()
+            and _localize_to_paris(p.timestamp).hour == local.hour
+        )
+        if same_slot >= 2:
+            context = "Pic récurrent sur plage active"
+        peaks.append(
+            EnergyTopPeak(
+                rank=rank,
+                timestamp=point.timestamp,
+                kwh=point.kwh,
+                kw_avg=point.kw_avg,
+                period_label=period_label,
+                context=context,
+                recommended_action=recommended_action,
+                quality_status=point.quality_status,
+                provenance=_build_provenance(
+                    service="energy_orchestration.loadcurve._compute_top_peaks",
+                    formula=("classement des points de la série par kw_avg décroissant ; top 5 retenus"),
+                    period=period,
+                    confidence=0.85,
+                    assumptions=[
+                        "timezone Europe/Paris",
+                        "kw_avg fourni par _aggregate_series (kWh / durée_step_hours)",
+                    ],
+                ),
+            )
+        )
+    return peaks
+
+
+def _compute_weekday_overlay(
+    series: list[EnergyLoadCurvePoint],
+    period: EnergyPeriod,
+    granularity: str = "hour",
+) -> list[EnergyWeekdayCurve]:
+    """Profil moyen par jour de semaine — 7 courbes × 24 heures.
+
+    Pour chaque (jour_de_semaine, heure), moyenne arithmétique des
+    valeurs des points correspondants dans la série.
+
+    Hotfix P3.1 : pour les granularités ≥ jour (day/week/month/year),
+    chaque point timeseries représente un step >= 24h et est indexé à
+    minuit Europe/Paris. On étale alors `kw_avg` du point sur toutes les
+    heures couvertes (sinon 23h sont vides et les courbes Recharts sont
+    invisibles). `avg_kwh` du bucket horaire est ramené à `kwh / step_h`
+    (kWh par heure cohérent avec puissance moyenne du step).
+    """
+    if not series:
+        return []
+
+    step_hours = _hours_for_granularity(granularity)
+    # Au-delà du step horaire, on étale chaque point sur toutes les
+    # heures du step (cas day/week/month/year — point indexé minuit).
+    spread_over_step = step_hours >= 24.0
+    hours_to_spread = int(min(24, max(1, round(step_hours)))) if spread_over_step else 1
+
+    # Bucket : (day_of_week, hour) → list of (kwh_h, kw_avg, quality_status)
+    buckets: dict[tuple[int, int], list[tuple[Optional[float], Optional[float], str]]] = {}
+    for point in series:
+        local = _localize_to_paris(point.timestamp)
+        weekday = local.weekday()
+        if spread_over_step:
+            # kWh par heure pour rester cohérent avec une lecture horaire.
+            kwh_h = (point.kwh / hours_to_spread) if point.kwh is not None else None
+            for h in range(hours_to_spread):
+                buckets.setdefault((weekday, h), []).append((kwh_h, point.kw_avg, point.quality_status))
+        else:
+            buckets.setdefault((weekday, local.hour), []).append((point.kwh, point.kw_avg, point.quality_status))
+
+    curves: list[EnergyWeekdayCurve] = []
+    for day_of_week in range(7):
+        label = _WEEKDAY_LABELS_FR[day_of_week]
+        points: list[EnergyWeekdayPoint] = []
+        for hour in range(24):
+            entries = buckets.get((day_of_week, hour), [])
+            kwh_vals = [e[0] for e in entries if e[0] is not None]
+            kw_vals = [e[1] for e in entries if e[1] is not None]
+            statuses = [e[2] for e in entries]
+            avg_kwh = sum(kwh_vals) / len(kwh_vals) if kwh_vals else None
+            avg_kw = sum(kw_vals) / len(kw_vals) if kw_vals else None
+            # quality_status majoritaire
+            if not statuses:
+                q = "missing"
+            else:
+                if all(s == "measured" for s in statuses):
+                    q = "measured"
+                elif any(s == "missing" for s in statuses):
+                    q = "missing"
+                else:
+                    q = "estimated"
+            points.append(
+                EnergyWeekdayPoint(
+                    hour=hour,
+                    avg_kwh=avg_kwh,
+                    avg_kw=avg_kw,
+                    n_points=len(entries),
+                    quality_status=q,  # type: ignore[arg-type]
+                )
+            )
+        curves.append(
+            EnergyWeekdayCurve(
+                day_of_week=day_of_week,
+                label=label,
+                points=points,
+                provenance=_build_provenance(
+                    service="energy_orchestration.loadcurve._compute_weekday_overlay",
+                    formula=(
+                        f"moyenne arithmétique kwh/kw_avg par (jour_semaine={label}, "
+                        "heure) sur la période ; n_points = nombre d'occurrences "
+                        "agrégées ; pour granularité ≥ jour, kw_avg du point est "
+                        "étalé sur les 24h du step (kWh/h = kwh_step / 24)"
+                    ),
+                    period=period,
+                    confidence=0.85,
+                    assumptions=[
+                        "timezone Europe/Paris",
+                        "0=Lundi, 6=Dimanche",
+                        "axe heure local 0h-23h",
+                    ],
+                ),
+            )
+        )
+    return curves
+
+
+def _compute_weekday_decomposition(
+    series: list[EnergyLoadCurvePoint],
+    period: EnergyPeriod,
+) -> list[EnergyWeekdayDecomposition]:
+    """Décomposition de la consommation totale par jour de semaine."""
+    if not series:
+        return []
+
+    # totaux par day_of_week + ensemble des dates uniques
+    totals: dict[int, float] = {i: 0.0 for i in range(7)}
+    unique_dates: dict[int, set[date]] = {i: set() for i in range(7)}
+    grand_total = 0.0
+    for point in series:
+        local = _localize_to_paris(point.timestamp)
+        dow = local.weekday()
+        if point.kwh is not None:
+            totals[dow] += point.kwh
+            grand_total += point.kwh
+            unique_dates[dow].add(local.date())
+
+    decomposition: list[EnergyWeekdayDecomposition] = []
+    for day_of_week in range(7):
+        total_kwh = totals[day_of_week]
+        n_days = len(unique_dates[day_of_week])
+        avg_kwh = total_kwh / n_days if n_days > 0 else None
+        share_pct = (total_kwh / grand_total * 100.0) if grand_total > 0 else None
+        state = _classify_weekday_state(share_pct)
+        decomposition.append(
+            EnergyWeekdayDecomposition(
+                day_of_week=day_of_week,
+                label=_WEEKDAY_LABELS_FR[day_of_week],
+                total_kwh=total_kwh if total_kwh > 0 else None,
+                avg_kwh_per_day=avg_kwh,
+                share_pct=share_pct,
+                n_days=n_days,
+                state=state,  # type: ignore[arg-type]
+                provenance=_build_provenance(
+                    service="energy_orchestration.loadcurve._compute_weekday_decomposition",
+                    formula=(
+                        f"total_kwh = Σ kwh sur {_WEEKDAY_LABELS_FR[day_of_week]}s ; "
+                        "share_pct = total_kwh / total_global × 100 ; "
+                        "avg_kwh_per_day = total_kwh / n_days"
+                    ),
+                    period=period,
+                    confidence=0.85 if grand_total > 0 else 0.0,
+                    assumptions=[
+                        "timezone Europe/Paris",
+                        "n_days = nombre de dates distinctes observées",
+                    ],
+                ),
+            )
+        )
+    return decomposition
+
+
+def _compute_weekday_weekend_comparison(
+    series: list[EnergyLoadCurvePoint],
+    period: EnergyPeriod,
+) -> Optional[EnergyWeekdayWeekendComparison]:
+    """Comparaison jours ouvrés (Lun-Ven) vs week-end (Sam-Dim)."""
+    if not series:
+        return None
+    weekday_kwh = 0.0
+    weekend_kwh = 0.0
+    for point in series:
+        if point.kwh is None:
+            continue
+        local = _localize_to_paris(point.timestamp)
+        if local.weekday() >= 5:
+            weekend_kwh += point.kwh
+        else:
+            weekday_kwh += point.kwh
+    total = weekday_kwh + weekend_kwh
+    weekend_share_pct = (weekend_kwh / total * 100.0) if total > 0 else None
+    return EnergyWeekdayWeekendComparison(
+        weekday_kwh=weekday_kwh if weekday_kwh > 0 else None,
+        weekend_kwh=weekend_kwh if weekend_kwh > 0 else None,
+        weekend_share_pct=weekend_share_pct,
+        provenance=_build_provenance(
+            service="energy_orchestration.loadcurve._compute_weekday_weekend_comparison",
+            formula=("Lun-Ven Σ kwh vs Sam-Dim Σ kwh ; weekend_share_pct = weekend_kwh / total × 100"),
+            period=period,
+            confidence=0.85 if total > 0 else 0.0,
+            assumptions=[
+                "timezone Europe/Paris",
+                "weekday = 0..4 (Lun-Ven), weekend = 5..6 (Sam-Dim)",
+            ],
+        ),
     )
 
 
