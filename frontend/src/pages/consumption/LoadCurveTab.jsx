@@ -22,6 +22,8 @@ import EnergyFilterBar from '../../ui/energy/EnergyFilterBar';
 import KpiCardWithProvenance from '../../ui/energy/KpiCardWithProvenance';
 import LoadCurveChart from '../../ui/energy/LoadCurveChart';
 import TopPeaksTable from '../../ui/energy/TopPeaksTable';
+// Sprint P2.5 audit final — helper canonique label site (jamais technique).
+import { formatSiteLabel } from '../../ui/energy/scopeLabel';
 // Sprint Énergie P2.2 (2026-05-30) — cross-link Centre d'action V4.
 // Wording générique car TopPeaksTable est indisponible côté API
 // pour cette version (cf. brief P1.S3a).
@@ -112,10 +114,12 @@ export default function LoadCurveTab() {
 
   const scope = useMemo(() => {
     const site = selectedSiteId && sitesById ? sitesById[selectedSiteId] : null;
+    // Sprint P2.5 audit final — `formatSiteLabel` retourne le nom métier
+    // du site ou un fallback FR métier, jamais un identifiant technique.
     return {
       kind: 'site',
       id: selectedSiteId,
-      label: site?.nom || (selectedSiteId ? `Site #${selectedSiteId}` : 'Sélectionnez un site'),
+      label: formatSiteLabel(site ? { ...site, id: selectedSiteId } : { id: selectedSiteId }),
     };
   }, [selectedSiteId, sitesById]);
 
