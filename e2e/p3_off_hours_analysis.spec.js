@@ -59,11 +59,13 @@ test.beforeAll(() => {
 });
 
 test.describe('P3.2 — Consommation hors horaires desktop 1440', () => {
-  test('01 — section « Consommation hors horaires » visible', async ({ page }) => {
+  test('01 — section « Consommation hors horaires » visible (90d hour pour seed démo)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await login(page);
-    // period=30d + hour pour aligner sur le seed démo (avril 2026).
-    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=30d&granularity=hour`, {
+    // Hotfix capture riche : period=90d couvre le seed démo (avril 2026)
+    // et le helper backend P3.2 _aggregate_hourly_multi_day lit toute la
+    // fenêtre — l'analyse expose KPI réels, top créneaux et recommandations.
+    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=90d&granularity=hour`, {
       waitUntil: 'load',
     });
     await page.waitForTimeout(5_000);
@@ -78,7 +80,7 @@ test.describe('P3.2 — Consommation hors horaires desktop 1440', () => {
   test('02 — microcopy FR + KPI + CTA Centre d\'action', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await login(page);
-    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=30d&granularity=hour`, {
+    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=90d&granularity=hour`, {
       waitUntil: 'load',
     });
     await page.waitForTimeout(5_000);
@@ -99,6 +101,16 @@ test.describe('P3.2 — Consommation hors horaires desktop 1440', () => {
 
     // CTA Centre d'action présent (au moins via cross-link existant)
     expect(body).toContain("Créer une action d'analyse");
+
+    // Hotfix P3.2 — capture riche : KPI, top créneaux, recommandations
+    // doivent être effectivement rendus sur la fenêtre 90j qui couvre
+    // le seed démo (site=1 ~27 % off, 12 slots, 2 recos selon API).
+    await expect(page.getByTestId('kpi-off-hours-kwh')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId('kpi-off-hours-share-pct')).toBeVisible();
+    await expect(page.getByTestId('kpi-weekend-off-hours-kwh')).toBeVisible();
+    await expect(page.getByTestId('kpi-night-baseload-kw')).toBeVisible();
+    await expect(page.getByTestId('off-hours-recommendations')).toBeVisible();
+    await expect(page.getByTestId('off-hours-slots-table')).toBeVisible();
   });
 
   test('03 — rail Énergie inchangé après P3.2', async ({ page }) => {
@@ -117,7 +129,7 @@ test.describe('P3.2 — Consommation hors horaires desktop 1440', () => {
   test('04 — capture pleine page documentaire 1440', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 3200 });
     await login(page);
-    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=30d&granularity=hour`, {
+    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=90d&granularity=hour`, {
       waitUntil: 'load',
     });
     await page.waitForTimeout(5_000);

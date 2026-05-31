@@ -217,3 +217,105 @@ describe('LoadCurveTab — doctrine zéro calcul métier + routing', () => {
     expect(src).toMatch(/path=["']courbe["']/);
   });
 });
+
+import { getOffHoursAnalysis } from '../services/api/energy';
+
+describe('LoadCurveTab — hotfix P3.2 synchronisation période hors horaires', () => {
+  beforeEach(() => {
+    getEnergyLoadCurve.mockReset();
+    getOffHoursAnalysis.mockReset();
+    getOffHoursAnalysis.mockResolvedValue(null);
+  });
+  afterEach(() => cleanup());
+
+  it('Critère 1 : getOffHoursAnalysis appelé avec la période active (mêmes from/to que loadcurve)', async () => {
+    getEnergyLoadCurve.mockResolvedValueOnce(SAMPLE_PAYLOAD);
+    renderTab();
+    await waitFor(() => expect(getOffHoursAnalysis).toHaveBeenCalled());
+    const offArgs = getOffHoursAnalysis.mock.calls[0][0];
+    const lcArgs = getEnergyLoadCurve.mock.calls[0][0];
+    expect(offArgs.scope).toBe('site');
+    expect(offArgs.scope_id).toBe(42);
+    expect(offArgs.from).toBeTruthy();
+    expect(offArgs.to).toBeTruthy();
+    // Hotfix : mêmes from/to que loadcurve.
+    expect(offArgs.from).toBe(lcArgs.from);
+    expect(offArgs.to).toBe(lcArgs.to);
+  });
+
+  it('Critère 2 : sélectionner 90j au lieu de 30j modifie les params envoyés à off-hours', async () => {
+    getEnergyLoadCurve.mockResolvedValue(SAMPLE_PAYLOAD);
+    render(
+      <MemoryRouter initialEntries={['/consommations/courbe?period=90d']}>
+        <LoadCurveTab />
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(getOffHoursAnalysis).toHaveBeenCalled());
+    const args = getOffHoursAnalysis.mock.calls[0][0];
+    const fromTs = new Date(args.from).getTime();
+    const toTs = new Date(args.to).getTime();
+    const spanDays = Math.round((toTs - fromTs) / 86400000);
+    // 90j ± 1 (tolérance arrondi DST)
+    expect(spanDays).toBeGreaterThanOrEqual(89);
+    expect(spanDays).toBeLessThanOrEqual(91);
+  });
+
+  it('Critère 3 : early-return si pas de site sélectionné (vérification statique)', () => {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const src = readFileSync(resolve(__dirname, '../pages/consumption/LoadCurveTab.jsx'), 'utf8');
+    // L'effect off-hours commence par un early-return si !selectedSiteId.
+    // Dynamic mock-then-reimport est instable sous vitest+jsdom ;
+    // on vérifie la garde dans le source du composant à la place.
+    expect(src).toMatch(
+      /if\s*\(\s*!selectedSiteId\s*\)\s*\{\s*setOffHoursPayload\s*\(\s*null\s*\)\s*;\s*return/
+    );
+  });
+
+  it('Critère 4 : empty state propre si payload off-hours porte empty_state (horaires absents)', async () => {
+    getEnergyLoadCurve.mockResolvedValueOnce(SAMPLE_PAYLOAD);
+    getOffHoursAnalysis.mockResolvedValueOnce({
+      scope: { kind: 'site', id: 42, org_id: 1 },
+      period: { label: 'custom', timezone: 'Europe/Paris' },
+      schedule: {
+        timezone: 'Europe/Paris',
+        source: 'missing',
+        weekly_schedule: [],
+        exceptions: [],
+        provenance: {
+          source: 'PROMEOS energy_orchestration',
+          service: 'energy_orchestration.opening_hours_analysis._missing_schedule',
+          formula: '-',
+          period: '-',
+          confidence: 0,
+          assumptions: [],
+        },
+      },
+      kpis: {},
+      slots: [],
+      top_off_hours: [],
+      recommendations: [],
+      warnings: [],
+      empty_state: "Horaires d'ouverture non renseignés pour ce site.",
+      provenance: {
+        source: 'PROMEOS energy_orchestration',
+        service: 'energy_orchestration.opening_hours_analysis.build_off_hours_analysis',
+        formula: '-',
+        period: '-',
+        confidence: 0,
+        assumptions: [],
+      },
+    });
+    renderTab();
+    await waitFor(() => screen.getByTestId('off-hours-empty-state'));
+    expect(screen.getByText(/Horaires d'ouverture non renseignés/)).toBeTruthy();
+  });
+
+  it('Critère doctrinal : LoadCurveTab ne calcule aucune part hors horaires côté FE', () => {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const src = readFileSync(resolve(__dirname, '../pages/consumption/LoadCurveTab.jsx'), 'utf8');
+    expect(src).not.toMatch(/off_hours_share\s*=\s*\w+\s*\/\s*\w+\s*\*/);
+    expect(src).not.toMatch(/off_hours_kwh\s*=\s*\w+\.reduce/);
+  });
+});

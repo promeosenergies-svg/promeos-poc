@@ -20,7 +20,7 @@ Doctrine cardinale :
 from __future__ import annotations
 
 import json
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -57,6 +57,54 @@ _DEFAULT_GRANULARITY = "hour"
 _MAX_TOP_OFF_HOURS = 10
 # Seuil anti-bruit : un point < 0.1 kWh est considéré comme bruit ; non comptabilisé.
 _NOISE_KWH_THRESHOLD = 0.1
+
+
+# ── Helpers série multi-jours horaire ──────────────────────────────────
+
+
+def _aggregate_hourly_multi_day(
+    db: Session, scope: EnergyScope, from_dt: datetime, to_dt: datetime
+) -> tuple[list[EnergyLoadCurvePoint], list[str]]:
+    """Charge la courbe horaire pour CHAQUE jour de la fenêtre.
+
+    Hotfix P3.2 — `_aggregate_series` du loadcurve (MVP P1.S2a) ne lit
+    en granularité hour QUE le dernier jour de la fenêtre. C'est
+    insuffisant pour analyser des fenêtres multi-jours d'horaires.
+    Ce helper interne P3.2 boucle sur tous les jours et concatène,
+    SANS modifier le service loadcurve (zéro régression P3.1).
+    """
+    points: list[EnergyLoadCurvePoint] = []
+    warnings: list[str] = []
+    try:
+        from services.consumption_granularity_service import (
+            get_org_hourly_curve_kw,
+        )
+    except ImportError:
+        return points, warnings
+
+    current = from_dt.date()
+    end = to_dt.date()
+    while current <= end:
+        try:
+            curve = get_org_hourly_curve_kw(db, scope.org_id, current)
+        except Exception:
+            curve = []
+        for p in curve:
+            kw = p.get("kw")
+            if kw is None:
+                continue
+            ts = datetime.combine(current, datetime.min.time()).replace(tzinfo=TZ_PARIS, hour=p["hour"])
+            # En hour : kw_avg = kw, kwh = kw × 1h.
+            points.append(
+                EnergyLoadCurvePoint(
+                    timestamp=ts,
+                    kwh=round(float(kw), 2),
+                    kw_avg=round(float(kw), 2),
+                    quality_status="measured",
+                )
+            )
+        current += timedelta(days=1)
+    return points, warnings
 
 
 # ── Helpers schedule ────────────────────────────────────────────────────
@@ -625,7 +673,15 @@ def build_off_hours_analysis(
             ),
         )
 
-    series, warnings = _aggregate_series(db, scope, from_dt, to_dt, granularity)
+    # Hotfix P3.2 — granularité hour multi-jours : `_aggregate_series`
+    # (MVP P1.S2a) ne lit que le dernier jour ; on bascule sur un
+    # helper P3.2-local pour charger toute la fenêtre. Les autres
+    # granularités (day/week/month/year) restent gérées par le service
+    # canonique loadcurve (pas de régression).
+    if granularity == "hour":
+        series, warnings = _aggregate_hourly_multi_day(db, scope, from_dt, to_dt)
+    else:
+        series, warnings = _aggregate_series(db, scope, from_dt, to_dt, granularity)
 
     if not series:
         return OffHoursAnalysisResponse(

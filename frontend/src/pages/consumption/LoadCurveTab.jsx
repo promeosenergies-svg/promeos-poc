@@ -166,7 +166,15 @@ export default function LoadCurveTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSiteId, filters.period, filters.granularity, filters.compare, reloadToken]);
 
-  // Sprint Énergie P3.2 — analyse hors horaires (endpoint dédié)
+  // Sprint Énergie P3.2 — analyse hors horaires (endpoint dédié).
+  // Hotfix : on aligne strictement les paramètres période sur ceux de
+  // /api/energy/loadcurve (mêmes `from`/`to` issus de `periodToRange`)
+  // pour qu'une sélection 7d/30d/90d dans le filterbar se reflète
+  // identiquement dans l'analyse hors horaires.
+  // Granularité : l'analyse hors horaires n'a de sens qu'en horaire
+  // (un point/jour à minuit fausserait la classification).
+  // - 15min/30min/hour → transmis tels quels
+  // - day/week/month/year → forcé sur hour (la fenêtre est inchangée)
   useEffect(() => {
     if (!selectedSiteId) {
       setOffHoursPayload(null);
@@ -175,12 +183,19 @@ export default function LoadCurveTab() {
     let cancelled = false;
     setOffHoursLoading(true);
     const { from, to } = periodToRange(filters.period);
+    const offHoursGranularity =
+      filters.granularity === 'day' ||
+      filters.granularity === 'week' ||
+      filters.granularity === 'month' ||
+      filters.granularity === 'year'
+        ? 'hour'
+        : filters.granularity;
     getOffHoursAnalysis({
       scope: 'site',
       scope_id: selectedSiteId,
       from,
       to,
-      granularity: filters.granularity === 'day' ? 'hour' : filters.granularity,
+      granularity: offHoursGranularity,
     })
       .then((data) => {
         if (!cancelled) setOffHoursPayload(data);

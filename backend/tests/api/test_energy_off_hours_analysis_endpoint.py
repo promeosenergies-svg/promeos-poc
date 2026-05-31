@@ -436,6 +436,36 @@ class TestBuildResponseFull:
                 granularity="hour",
             )
 
+    def test_aggregate_hourly_multi_day_concatenates_window(self, db_empty, monkeypatch):
+        """Hotfix P3.2 — granularity=hour multi-jours charge TOUS les jours.
+
+        Cause racine : `_aggregate_series` du loadcurve (MVP P1.S2a) ne
+        lit que le dernier jour ; on bascule sur un helper P3.2-local
+        qui boucle sur tous les jours de la fenêtre.
+        """
+        called_dates: list = []
+
+        def fake_hourly_curve(db, org_id, day, *args, **kwargs):
+            called_dates.append(day)
+            return [{"hour": h, "kw": 100.0} for h in range(24)]
+
+        import services.consumption_granularity_service as svc
+
+        monkeypatch.setattr(svc, "get_org_hourly_curve_kw", fake_hourly_curve)
+        from services.energy_orchestration.opening_hours_analysis import (
+            _aggregate_hourly_multi_day,
+        )
+        from schemas.energy_orchestration import EnergyScope
+
+        scope = EnergyScope(kind="site", id=1, org_id=1)
+        from_dt = datetime(2026, 4, 1, tzinfo=TZ_PARIS)
+        to_dt = datetime(2026, 4, 8, tzinfo=TZ_PARIS)  # 8 jours
+        points, _w = _aggregate_hourly_multi_day(db_empty, scope, from_dt, to_dt)
+        # 8 jours × 24 heures = 192 points
+        assert len(points) == 8 * 24
+        # 8 dates distinctes chargées
+        assert len(set(called_dates)) == 8
+
     def test_zero_total_does_not_divide_by_zero(self, db_empty):
         """Share = None si total = 0, jamais d'exception."""
         _seed_schedule(db_empty)
