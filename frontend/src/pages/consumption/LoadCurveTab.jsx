@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { useScope } from '../../contexts/ScopeContext';
-import { getEnergyLoadCurve } from '../../services/api/energy';
+import { getEnergyLoadCurve, getOffHoursAnalysis } from '../../services/api/energy';
 import EnergyFilterBar from '../../ui/energy/EnergyFilterBar';
 import KpiCardWithProvenance from '../../ui/energy/KpiCardWithProvenance';
 import LoadCurveChart from '../../ui/energy/LoadCurveChart';
@@ -25,6 +25,9 @@ import TopPeaksTable from '../../ui/energy/TopPeaksTable';
 // Sprint Énergie P3.1 — section Profil moyen par jour
 import WeekdayOverlayChart from '../../ui/energy/WeekdayOverlayChart';
 import WeekdayDecompositionBar from '../../ui/energy/WeekdayDecompositionBar';
+// Sprint Énergie P3.2 — section Consommation hors horaires
+import OffHoursAnalysisCard from '../../ui/energy/OffHoursAnalysisCard';
+import OffHoursSlotsTable from '../../ui/energy/OffHoursSlotsTable';
 // Sprint P2.5 audit final — helper canonique label site (jamais technique).
 import { formatSiteLabel } from '../../ui/energy/scopeLabel';
 // Sprint Énergie P2.2 (2026-05-30) — cross-link Centre d'action V4.
@@ -114,6 +117,9 @@ export default function LoadCurveTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [reloadToken, setReloadToken] = useState(0);
+  // Sprint Énergie P3.2 — état isolé pour /api/energy/off-hours-analysis
+  const [offHoursPayload, setOffHoursPayload] = useState(null);
+  const [offHoursLoading, setOffHoursLoading] = useState(false);
 
   const scope = useMemo(() => {
     const site = selectedSiteId && sitesById ? sitesById[selectedSiteId] : null;
@@ -159,6 +165,37 @@ export default function LoadCurveTab() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSiteId, filters.period, filters.granularity, filters.compare, reloadToken]);
+
+  // Sprint Énergie P3.2 — analyse hors horaires (endpoint dédié)
+  useEffect(() => {
+    if (!selectedSiteId) {
+      setOffHoursPayload(null);
+      return undefined;
+    }
+    let cancelled = false;
+    setOffHoursLoading(true);
+    const { from, to } = periodToRange(filters.period);
+    getOffHoursAnalysis({
+      scope: 'site',
+      scope_id: selectedSiteId,
+      from,
+      to,
+      granularity: filters.granularity === 'day' ? 'hour' : filters.granularity,
+    })
+      .then((data) => {
+        if (!cancelled) setOffHoursPayload(data);
+      })
+      .catch(() => {
+        if (!cancelled) setOffHoursPayload(null);
+      })
+      .finally(() => {
+        if (!cancelled) setOffHoursLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSiteId, filters.period, filters.granularity, reloadToken]);
 
   const handleFilterChange = (next) => {
     const params = new URLSearchParams(searchParams);
@@ -264,6 +301,14 @@ export default function LoadCurveTab() {
                 comparison={payload.weekday_weekend_comparison}
               />
             )}
+
+          {/* Sprint Énergie P3.2 — section Consommation hors horaires
+              (KPI + horaires déclarés + recommandations + top créneaux). */}
+          <OffHoursAnalysisCard payload={offHoursPayload} loading={offHoursLoading} />
+          <OffHoursSlotsTable
+            slots={offHoursPayload?.top_off_hours || []}
+            loading={offHoursLoading}
+          />
 
           {/* Sprint Énergie P2.2 (2026-05-30) — cross-link Action V4. */}
           <EnergyCrossLinks links={LOAD_CURVE_CROSS_LINKS} testId="loadcurve-cross-links" />

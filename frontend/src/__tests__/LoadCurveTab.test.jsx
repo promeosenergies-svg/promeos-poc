@@ -18,6 +18,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../services/api/energy', () => ({
   getEnergyLoadCurve: vi.fn(),
+  // Sprint Énergie P3.2 — mock du helper off-hours.
+  getOffHoursAnalysis: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../contexts/ScopeContext', () => ({
