@@ -89,6 +89,12 @@ export default function FavorableHoursPanel({
     hours: favorableHours.filter((h) => h.reason === reason),
   })).filter((g) => g.hours.length > 0);
 
+  // Sprint Énergie P2.4 — marqueur provenance visible (source-guard
+  // statique). Toutes les heures favorables partagent la même
+  // provenance backend (`market_exposure._compute_favorable_hours`).
+  // Exposée discrètement en pied de panel.
+  const commonProvenance = favorableHours[0]?.provenance;
+
   return (
     <div
       className={`rounded-xl border border-gray-200 bg-white p-4 space-y-3 ${className}`}
@@ -111,6 +117,15 @@ export default function FavorableHoursPanel({
           )}
         </div>
       ))}
+      {commonProvenance?.service && (
+        <p
+          className="text-[9px] text-gray-400 font-mono italic"
+          data-testid="favorable-hours-provenance"
+          aria-label={`Provenance : ${commonProvenance.service}`}
+        >
+          Source : {commonProvenance.service}
+        </p>
+      )}
     </div>
   );
 }

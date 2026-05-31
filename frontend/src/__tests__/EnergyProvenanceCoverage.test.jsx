@@ -116,3 +116,75 @@ describe('Provenance coverage — état confidenceDisplay P2.1 (déplacement eff
     expect(src).not.toContain('confidenceDisplay');
   });
 });
+
+describe('Sprint P2.4 — Provenance visible obligatoire (extension P1.S7)', () => {
+  it('FavorableHoursPanel expose désormais data-testid="favorable-hours-provenance"', () => {
+    const src = readSrc('../ui/energy/FavorableHoursPanel.jsx');
+    expect(src).toContain('data-testid="favorable-hours-provenance"');
+    expect(src).toMatch(/aria-label=\{[^}]*[Pp]rovenance/);
+  });
+
+  it('CostVsContractCard scenarios — ScenarioProvenanceDot exposé', () => {
+    const src = readSrc('../ui/energy/CostVsContractCard.jsx');
+    expect(src).toContain('ScenarioProvenanceDot');
+    expect(src).toContain('data-testid="scenario-provenance"');
+  });
+
+  it('DisplacementSimulationCard — SimulationProvenanceDot exposé', () => {
+    const src = readSrc('../ui/energy/DisplacementSimulationCard.jsx');
+    expect(src).toContain('SimulationProvenanceDot');
+    expect(src).toContain('data-testid="simulation-provenance"');
+  });
+
+  const METIER_COMPONENTS_WITH_PROVENANCE = [
+    { file: '../ui/energy/BaseloadComparisonCard.jsx', testid: 'baseload-provenance' },
+    { file: '../ui/energy/CostVsContractCard.jsx', testid: 'scenario-provenance' },
+    { file: '../ui/energy/DisplacementSimulationCard.jsx', testid: 'simulation-provenance' },
+    { file: '../ui/energy/ExposureScoreGauge.jsx', testid: 'exposure-score-provenance' },
+    { file: '../ui/energy/FavorableHoursPanel.jsx', testid: 'favorable-hours-provenance' },
+    { file: '../ui/energy/PriceDecompositionTable.jsx', testid: 'price-component-provenance' },
+    { file: '../ui/energy/TopExpensiveHoursTable.jsx', testid: 'top-hour-provenance' },
+    { file: '../ui/energy/WeekProfileHeatmap.jsx', testid: 'heatmap-provenance' },
+  ];
+
+  for (const { file, testid } of METIER_COMPONENTS_WITH_PROVENANCE) {
+    it(`${file.split('/').pop()} expose data-testid="${testid}"`, () => {
+      const src = readSrc(file);
+      expect(src).toContain(`data-testid="${testid}"`);
+    });
+  }
+
+  it('KpiCardWithProvenance reste le composant canonique délégation', () => {
+    const tabsAndStrips = [
+      '../ui/energy/MonitoringSynthesisStrip.jsx',
+      '../pages/consumption/LoadCurveTab.jsx',
+      '../pages/usages/WeekProfileTab.jsx',
+      '../pages/consumption/CostContractTab.jsx',
+      '../pages/consumption/MarketExposureTab.jsx',
+    ];
+    for (const file of tabsAndStrips) {
+      const src = readSrc(file);
+      expect(src).toMatch(/import\s+KpiCardWithProvenance/);
+    }
+  });
+
+  const NON_METIER_WHITELIST = [
+    '../ui/energy/EnergyCrossLinks.jsx',
+    '../ui/energy/EnergyFilterBar.jsx',
+    '../ui/energy/SiteRequiredState.jsx',
+  ];
+
+  for (const file of NON_METIER_WHITELIST) {
+    it(`${file.split('/').pop()} (non-métier whitelist) n'accepte pas \`kpi\`/\`provenance\` en prop`, () => {
+      const src = readSrc(file);
+      // Vérifie que le composant ne déclare pas ces props (signature default function)
+      const exportMatch = src.match(/export\s+default\s+function\s+\w+\s*\(([^)]*)\)/);
+      if (exportMatch) {
+        const props = exportMatch[1];
+        expect(props).not.toMatch(/\bkpi\b/);
+        expect(props).not.toMatch(/\bkpis\b/);
+        expect(props).not.toMatch(/\bprovenance\b/);
+      }
+    });
+  }
+});
