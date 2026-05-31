@@ -483,12 +483,81 @@ export default function ConformitePage() {
       .filter((f) => f.insight_status !== 'resolved' && f.insight_status !== 'false_positive');
   }, [obligations]);
 
+  // Sprint Site360 P1 (2026-05-31) — sous-ensemble d'obligations
+  // restreint au chip réglementaire actif (?regulation=dt|bacs|aper|
+  // audit-sme). Sert à recalculer score / échéance / actions /
+  // preuves / parcours sur la sous-vue. Si pas de chip → identique à
+  // `obligations` (donc transparent).
+  const filteredObligationsByRegulation = useMemo(() => {
+    if (!regulationFilter) return obligations;
+    const allowedCodes = REGULATION_FILTER_MAP[regulationFilter] || [];
+    return obligations.filter((o) =>
+      allowedCodes.some((code) => (o.code || '').toLowerCase().includes(code.toLowerCase()))
+    );
+  }, [obligations, regulationFilter]);
+
+  // Sprint Site360 P1 — actionable findings restreints au sous-ensemble.
+  const filteredActionableFindings = useMemo(() => {
+    if (!regulationFilter) return actionableFindings;
+    return filteredObligationsByRegulation
+      .flatMap((o) => o.findings)
+      .filter((f) => f.status === 'NOK' || f.status === 'UNKNOWN')
+      .filter((f) => f.insight_status !== 'resolved' && f.insight_status !== 'false_positive');
+  }, [actionableFindings, filteredObligationsByRegulation, regulationFilter]);
+
+  // Sprint Site360 P1 — score restreint au sous-ensemble.
+  // Si pas de chip → score global backend conservé.
+  // Si chip → pct = conformes / total × 100 sur le subset (formule
+  // d'affichage transparente, pas de calcul métier neuf).
+  const scoreFiltered = useMemo(() => {
+    if (!regulationFilter || !score) return score;
+    const subset = filteredObligationsByRegulation;
+    if (subset.length === 0) {
+      return { ...score, pct: null, total: 0, conformes: 0, non_conformes: 0 };
+    }
+    const conformes = subset.filter((o) => o.statut === 'conforme').length;
+    const non_conformes = subset.filter((o) => o.statut === 'non_conforme').length;
+    const a_risque = subset.filter((o) => o.statut === 'a_risque').length;
+    return {
+      ...score,
+      pct: Math.round((conformes / subset.length) * 100),
+      total: subset.length,
+      conformes,
+      non_conformes,
+      a_risque,
+    };
+  }, [regulationFilter, filteredObligationsByRegulation, score]);
+
+  // Sprint Site360 P1 — timeline restreinte au sous-ensemble (events
+  // dont la regulation matche le chip actif). `next_deadline` est
+  // recalculée en prenant le premier event futur du subset.
+  const timelineFiltered = useMemo(() => {
+    if (!regulationFilter || !timeline) return timeline;
+    const allowedCodes = REGULATION_FILTER_MAP[regulationFilter] || [];
+    const events = (timeline.events || []).filter((e) =>
+      allowedCodes.some((c) =>
+        (e.regulation || e.code || '').toLowerCase().includes(c.toLowerCase())
+      )
+    );
+    const next_deadline =
+      events.find((e) => e.days_remaining == null || e.days_remaining >= 0) ||
+      (events.length > 0 ? events[0] : null);
+    return { ...timeline, events, next_deadline };
+  }, [timeline, regulationFilter]);
+
+  // Sprint Site360 P1 — preuves manquantes sur sous-ensemble filtré.
+  const proofsMissingCountFiltered = useMemo(() => {
+    return filteredObligationsByRegulation.filter(
+      (o) => o.statut !== 'conforme' && !(proofFiles[o.id]?.length > 0)
+    ).length;
+  }, [filteredObligationsByRegulation, proofFiles]);
+
   // ── Guided Mode + NBA + Donnees metrics ──
   const guidedSteps = useMemo(() => {
     if (isExpert || !sitesData.length) return [];
     return computeGuidedSteps(bundle, sitesData, summary, {
-      obligations,
-      actionableFindings,
+      obligations: filteredObligationsByRegulation,
+      actionableFindings: filteredActionableFindings,
       proofFiles,
       bacsV2Summary,
     });
@@ -497,8 +566,8 @@ export default function ConformitePage() {
     bundle,
     sitesData,
     summary,
-    obligations,
-    actionableFindings,
+    filteredObligationsByRegulation,
+    filteredActionableFindings,
     proofFiles,
     bacsV2Summary,
   ]);
@@ -506,12 +575,20 @@ export default function ConformitePage() {
   const nextBestAction = useMemo(() => {
     if (!sitesData.length) return null;
     return computeNextBestAction(bundle, sitesData, summary, {
-      obligations,
-      actionableFindings,
+      obligations: filteredObligationsByRegulation,
+      actionableFindings: filteredActionableFindings,
       proofFiles,
       bacsV2Summary,
     });
-  }, [bundle, sitesData, summary, obligations, actionableFindings, proofFiles, bacsV2Summary]);
+  }, [
+    bundle,
+    sitesData,
+    summary,
+    filteredObligationsByRegulation,
+    filteredActionableFindings,
+    proofFiles,
+    bacsV2Summary,
+  ]);
 
   const donneesMetrics = useMemo(() => {
     if (!sitesData.length) return null;
@@ -828,14 +905,40 @@ export default function ConformitePage() {
           unique : pas un nouveau menu, juste une vue lisible en 30 s pour
           DAF/DG. Le reste de la page reste accessible plus bas pour les
           personas experts (RegOps, Auditeur, Energy Manager). */}
+      {/* Sprint Site360 P1 (2026-05-31) — bandeau « Vue filtrée » quand
+          un chip réglementaire est actif. Signale au DAF que la
+          synthèse et le bandeau urgence ne portent que sur la
+          sous-vue. */}
+      {regulationFilter && (
+        <div
+          className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-medium text-blue-800"
+          data-testid="regulation-filter-banner"
+          data-regulation={regulationFilter}
+        >
+          <span className="text-blue-600">●</span>
+          Vue filtrée :{' '}
+          {(REGULATION_CHIPS.find((c) => c.key === regulationFilter) || {}).label ||
+            regulationFilter}
+          <button
+            type="button"
+            className="ml-1 text-blue-600 hover:text-blue-800 underline"
+            data-testid="regulation-filter-clear"
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              next.delete('regulation');
+              setSearchParams(next, { replace: true });
+            }}
+          >
+            voir toutes les obligations
+          </button>
+        </div>
+      )}
+
       <ConformiteSyntheseCompacte
-        score={score}
-        nextDeadline={timeline?.next_deadline || null}
-        actionsCount={actionableFindings.length}
-        proofsMissingCount={
-          obligations.filter((o) => o.statut !== 'conforme' && !(proofFiles[o.id]?.length > 0))
-            .length
-        }
+        score={scoreFiltered}
+        nextDeadline={timelineFiltered?.next_deadline || null}
+        actionsCount={filteredActionableFindings.length}
+        proofsMissingCount={proofsMissingCountFiltered}
         sitesEvalues={scopedSites?.length || 0}
         sitesPerimetre={sitesCount || 0}
         onOpenTab={switchToTab}
@@ -915,7 +1018,13 @@ export default function ConformitePage() {
           ObligationsTab), résumé exécutif retiré (déjà dans la synthèse
           compacte), RiskBadge retiré (déjà carte 4 de la synthèse). Un
           seul CTA primaire par état. */}
-      {summary && <ComplianceSummaryBanner score={score} timeline={timeline} navigate={navigate} />}
+      {summary && (
+        <ComplianceSummaryBanner
+          score={scoreFiltered}
+          timeline={timelineFiltered}
+          navigate={navigate}
+        />
+      )}
 
       {/* Empty state when no obligations found */}
       {!summary && emptyReason === 'NO_SITES' && (
