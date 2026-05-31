@@ -60,6 +60,8 @@ import {
   getEnergyIntensity,
 } from '../services/api';
 import { buildKbRecoActionPayload } from '../models/kbRecoActionModel';
+// Sprint Site360 P0 — registry canonique des onglets + routes canoniques.
+import { getEnabledSite360Tabs, SITE360_CANONICAL_ROUTES } from './site360/site360TabsRegistry';
 import {
   getStatusBadgeProps,
   SEV_BADGE,
@@ -105,17 +107,15 @@ const STATUT_BADGE = {
   a_evaluer: _sb('a_evaluer'),
 };
 
-const TABS = [
-  { id: 'resume', label: 'Résumé' },
-  { id: 'conso', label: 'Consommation' },
-  { id: 'analytics', label: 'Analytics' },
-  { id: 'factures', label: 'Factures' },
-  { id: 'reconciliation', label: 'Réconciliation' },
-  { id: 'conformite', label: 'Conformité' },
-  { id: 'actions', label: 'Actions' },
-  { id: 'puissance', label: 'Puissance' },
-  { id: 'usages', label: 'Usages' },
-];
+// Sprint Site360 P0 — TABS dérivé du registry canonique
+// (cf. ./site360/site360TabsRegistry.js, importé en haut du fichier).
+// La registry est la source de vérité unique : id, label FR, testId,
+// emptyState, status enabled/hidden.
+const TABS = getEnabledSite360Tabs().map(({ id, label, testId }) => ({
+  id,
+  label,
+  testId,
+}));
 
 function _MiniKpi({ icon: Icon, label, value, color, children }) {
   return (
@@ -438,7 +438,7 @@ function TabResume({
                   { to: 'usages', icon: BarChart3, label: 'Usages énergétiques' },
                   { to: 'billing', icon: Zap, label: 'Bill Intelligence' },
                   { to: 'conformite', icon: ShieldCheck, label: 'Conformité' },
-                  { to: 'achat-assistant', icon: FileText, label: 'Radar contrats' },
+                  { to: 'achat-energie', icon: FileText, label: 'Radar contrats' },
                   { to: 'actions', icon: Wrench, label: 'Actions' },
                 ].map(({ to, icon: Icon, label }) => (
                   <Link
@@ -1905,8 +1905,11 @@ export default function Site360() {
           <Button variant="outline" size="sm" onClick={() => setShowIntake(true)}>
             Compléter les données
           </Button>
-          <Button size="sm" onClick={() => navigate(`/regops/${site.id}`)}>
-            Evaluation RegOps
+          <Button
+            size="sm"
+            onClick={() => navigate(`${SITE360_CANONICAL_ROUTES.regops}/${site.id}`)}
+          >
+            Évaluation RegOps
           </Button>
         </div>
       </div>
@@ -2167,7 +2170,9 @@ export default function Site360() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(`/achat-assistant?site_id=${site.id}`)}
+              onClick={() =>
+                navigate(`${SITE360_CANONICAL_ROUTES.achatEnergie}?site_id=${site.id}`)
+              }
             >
               Créer scénario d&apos;achat
             </Button>
