@@ -63,6 +63,9 @@ METIER_PROPS = (
     "baseloadComparison",
     "activeContract",
     "topPeaks",
+    # Sprint P3.1 — Profil moyen par jour + décomposition jour de semaine.
+    "curves",
+    "decomposition",
 )
 
 
@@ -108,12 +111,9 @@ NON_METIER_WHITELIST: dict[str, str] = {
         "via les 4 KPI `KpiCardWithProvenance`. Pas de dette frontend ; "
         "exposer provenance directement dans le chart = redondance UX."
     ),
-    "TopPeaksTable.jsx": (
-        "Placeholder EmptyState « Top pics indisponible dans cette version » "
-        "(livré P1.S3a). L'API `/api/energy/loadcurve` n'expose pas encore "
-        "`top_peaks` côté backend. Cible : extension API backend (P3.x) "
-        "puis ajout marqueur provenance et retrait whitelist."
-    ),
+    # Sprint P3.1 — TopPeaksTable n'est PLUS whitelist : backend
+    # `/api/energy/loadcurve.top_peaks` livré, composant branché avec
+    # `data-testid="top-peak-provenance"` par ligne. Dette levée.
 }
 
 

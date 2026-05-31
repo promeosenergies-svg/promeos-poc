@@ -22,6 +22,9 @@ import EnergyFilterBar from '../../ui/energy/EnergyFilterBar';
 import KpiCardWithProvenance from '../../ui/energy/KpiCardWithProvenance';
 import LoadCurveChart from '../../ui/energy/LoadCurveChart';
 import TopPeaksTable from '../../ui/energy/TopPeaksTable';
+// Sprint Énergie P3.1 — section Profil moyen par jour
+import WeekdayOverlayChart from '../../ui/energy/WeekdayOverlayChart';
+import WeekdayDecompositionBar from '../../ui/energy/WeekdayDecompositionBar';
 // Sprint P2.5 audit final — helper canonique label site (jamais technique).
 import { formatSiteLabel } from '../../ui/energy/scopeLabel';
 // Sprint Énergie P2.2 (2026-05-30) — cross-link Centre d'action V4.
@@ -242,11 +245,27 @@ export default function LoadCurveTab() {
             warnings={payload?.warnings || []}
           />
 
-          <TopPeaksTable points={null} granularity={filters.granularity} loading={loading} />
+          <TopPeaksTable
+            points={payload?.top_peaks || []}
+            granularity={filters.granularity}
+            loading={loading}
+          />
 
-          {/* Sprint Énergie P2.2 (2026-05-30) — cross-link Action V4
-              avec wording générique car TopPeaksTable est indisponible
-              côté API. Pas de prétention qu'un pic a été détecté. */}
+          {/* Sprint Énergie P3.1 — section Profil moyen par jour
+              (7 courbes lundi → dimanche + décomposition + comparaison
+              jours ouvrés/week-end). */}
+          {Array.isArray(payload?.weekday_overlay) && payload.weekday_overlay.length > 0 && (
+            <WeekdayOverlayChart curves={payload.weekday_overlay} display={filters.display} />
+          )}
+          {Array.isArray(payload?.weekday_decomposition) &&
+            payload.weekday_decomposition.length > 0 && (
+              <WeekdayDecompositionBar
+                decomposition={payload.weekday_decomposition}
+                comparison={payload.weekday_weekend_comparison}
+              />
+            )}
+
+          {/* Sprint Énergie P2.2 (2026-05-30) — cross-link Action V4. */}
           <EnergyCrossLinks links={LOAD_CURVE_CROSS_LINKS} testId="loadcurve-cross-links" />
         </>
       )}

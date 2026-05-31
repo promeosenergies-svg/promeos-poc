@@ -54,6 +54,9 @@ ENERGY_FILES_REL = [
     "ui/energy/EnergyCrossLinks.jsx",
     "ui/energy/SiteRequiredState.jsx",
     "ui/energy/TopPeaksTable.jsx",
+    # Sprint P3.1 — Profil moyen par jour + Répartition par jour.
+    "ui/energy/WeekdayOverlayChart.jsx",
+    "ui/energy/WeekdayDecompositionBar.jsx",
     "ui/energy/scopeLabel.js",
 ]
 
@@ -223,6 +226,45 @@ class TestEnergyVisualQualityP2_5:
                 f"{rel} doit conserver la phrase « Simulation indicative » (doctrine P1.S5/S6)."
             )
             assert "promesse d'économie" in content, f"{rel} doit conserver la mention « promesse d'économie »."
+
+    def test_no_old_top_pics_microcopy_p3_1(self):
+        """Sprint P3.1 — l'ancien wording « Top pics » (placeholder P1.S3a) est interdit.
+
+        Microcopy canonique : « Pics de puissance » (cf.
+        `TopPeaksTable.jsx` + brief P3.1).
+        """
+        violations: list[str] = []
+        forbidden_patterns = [
+            r"['\"`>]\s*Top pics indisponible",
+            r"['\"`>]\s*Top pics\s*['\"`<]",
+        ]
+        for rel, code in _iter_energy_files():
+            for pattern in forbidden_patterns:
+                if re.search(pattern, code):
+                    violations.append(f"  {rel} → ancien libellé « Top pics » détecté ({pattern})")
+        if violations:
+            pytest.fail(
+                "\n🔴 P3.1 — Microcopy « Top pics » obsolète détectée :\n\n"
+                + "\n".join(violations)
+                + "\n\nUtiliser « Pics de puissance » (cf. brief Énergie P3.1).\n"
+            )
+
+    def test_weekday_components_render_provenance_p3_1(self):
+        """Sprint P3.1 — WeekdayOverlayChart + WeekdayDecompositionBar exposent provenance."""
+        for rel in (
+            "ui/energy/WeekdayOverlayChart.jsx",
+            "ui/energy/WeekdayDecompositionBar.jsx",
+        ):
+            path = FRONTEND / rel
+            assert path.exists(), f"Composant P3.1 manquant : {rel}"
+            content = path.read_text(encoding="utf-8")
+            assert "provenance" in content, (
+                f"{rel} doit lire `provenance` du payload backend (P3.1 doctrine zéro calcul)."
+            )
+            # Au moins un data-testid provenance visible.
+            assert re.search(r'data-testid="weekday-(overlay|decomposition)-provenance"', content), (
+                f"{rel} doit exposer un data-testid de provenance visible (P3.1)."
+            )
 
     def test_french_microcopy_emptystates(self):
         """Les empty states sont en FR (pas de fallback anglais)."""

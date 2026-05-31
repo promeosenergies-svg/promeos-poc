@@ -150,6 +150,67 @@ class EnergyLoadCurveKpis(BaseModel):
     average_kw: Optional[EnergyKpi] = None
 
 
+# ── Sprint Énergie P3.1 : top_peaks + weekday_overlay ────────────────
+
+
+class EnergyTopPeak(BaseModel):
+    """Un pic de puissance classé sur la période (P3.1)."""
+
+    rank: int = Field(..., ge=1, description="1 = pic le plus critique")
+    timestamp: datetime
+    kwh: Optional[float] = None
+    kw_avg: Optional[float] = None
+    period_label: str = Field(..., description="ex: 'Mardi 14h'")
+    context: Optional[str] = Field(None, description="ex: 'Pic récurrent sur plage active'")
+    recommended_action: str = Field(..., description="action conseillée FR backend")
+    quality_status: Literal["measured", "estimated", "missing", "corrected"] = "measured"
+    provenance: EnergyProvenance
+
+
+class EnergyWeekdayPoint(BaseModel):
+    """Un point horaire d'une courbe moyenne par jour de semaine (P3.1)."""
+
+    hour: int = Field(..., ge=0, le=23)
+    avg_kwh: Optional[float] = None
+    avg_kw: Optional[float] = None
+    n_points: int = Field(0, ge=0, description="nombre de jours agrégés pour ce point")
+    quality_status: Literal["measured", "estimated", "missing"] = "measured"
+
+
+class EnergyWeekdayCurve(BaseModel):
+    """Courbe moyenne pour un jour de semaine (P3.1) : 24 points horaires."""
+
+    day_of_week: int = Field(..., ge=0, le=6, description="0=Lun, 6=Dim")
+    label: str = Field(..., description="ex: 'Lundi'")
+    points: list[EnergyWeekdayPoint] = Field(default_factory=list)
+    provenance: EnergyProvenance
+
+
+WeekdayState = Literal["sain", "vigilance", "critique", "inactif"]
+
+
+class EnergyWeekdayDecomposition(BaseModel):
+    """Décomposition de la consommation par jour de semaine (P3.1)."""
+
+    day_of_week: int = Field(..., ge=0, le=6)
+    label: str
+    total_kwh: Optional[float] = None
+    avg_kwh_per_day: Optional[float] = None
+    share_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
+    n_days: int = Field(0, ge=0)
+    state: WeekdayState = "inactif"
+    provenance: EnergyProvenance
+
+
+class EnergyWeekdayWeekendComparison(BaseModel):
+    """Comparaison jours ouvrés vs week-end (P3.1)."""
+
+    weekday_kwh: Optional[float] = None
+    weekend_kwh: Optional[float] = None
+    weekend_share_pct: Optional[float] = Field(None, ge=0.0, le=100.0)
+    provenance: EnergyProvenance
+
+
 class EnergyLoadCurveResponse(BaseModel):
     """Payload réponse pour vue Courbe de charge."""
 
@@ -160,6 +221,11 @@ class EnergyLoadCurveResponse(BaseModel):
     series: list[EnergyLoadCurvePoint] = Field(default_factory=list)
     series_compare: list[EnergyLoadCurvePoint] = Field(default_factory=list)
     kpis: EnergyLoadCurveKpis = Field(default_factory=EnergyLoadCurveKpis)
+    # Sprint Énergie P3.1 — pics de puissance + profil moyen par jour
+    top_peaks: list[EnergyTopPeak] = Field(default_factory=list)
+    weekday_overlay: list[EnergyWeekdayCurve] = Field(default_factory=list)
+    weekday_decomposition: list[EnergyWeekdayDecomposition] = Field(default_factory=list)
+    weekday_weekend_comparison: Optional[EnergyWeekdayWeekendComparison] = None
     provenance: EnergyProvenance
     warnings: list[str] = Field(default_factory=list)
     empty_state: Optional[str] = None
