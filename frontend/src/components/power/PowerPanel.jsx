@@ -48,7 +48,9 @@ export default function PowerPanel({ siteId }) {
 
   if (!profile?.data_available) {
     return (
-      <div className="text-sm text-gray-400 py-6 text-center">Données puissance indisponibles.</div>
+      <div className="text-sm text-gray-400 py-6 text-center">
+        Données de puissance indisponibles pour ce site.
+      </div>
     );
   }
 

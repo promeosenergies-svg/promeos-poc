@@ -75,7 +75,7 @@ export default function FlexScoreCard({ siteId, onPlanifier }) {
     <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-gray-900">Score de Flexibilite</h3>
+        <h3 className="text-base font-semibold text-gray-900">Score de flexibilité</h3>
         <div className={`px-3 py-1 rounded-full text-lg font-bold border ${tier.badge}`}>
           {Math.round(scoreGlobal * 100)}/100
         </div>
@@ -113,7 +113,7 @@ export default function FlexScoreCard({ siteId, onPlanifier }) {
       {data.top_usages?.length > 0 && (
         <div className="space-y-2">
           <div className="text-sm font-medium text-gray-700">
-            Usages detectes ({data.n_usages_evalues})
+            Usages détectés ({data.n_usages_evalues})
           </div>
           {data.top_usages.map((usage, i) => {
             const usageTier = scoreTier(usage.score);
@@ -155,10 +155,10 @@ export default function FlexScoreCard({ siteId, onPlanifier }) {
         </div>
       )}
 
-      {/* Mecanismes accessibles */}
+      {/* Mécanismes accessibles */}
       {data.mecanismes_accessibles?.length > 0 && (
         <div className="space-y-1.5">
-          <div className="text-sm font-medium text-gray-700">Mecanismes accessibles</div>
+          <div className="text-sm font-medium text-gray-700">Mécanismes accessibles</div>
           <div className="flex flex-wrap gap-1.5">
             {data.mecanismes_accessibles.map((m) => (
               <span
@@ -176,13 +176,13 @@ export default function FlexScoreCard({ siteId, onPlanifier }) {
       {onPlanifier && scoreGlobal >= 0.6 && data.top_usages?.length > 0 && (
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
           <span className="text-xs text-gray-500">
-            Potentiel identifie sur {data.n_usages_evalues} usages
+            Potentiel identifié sur {data.n_usages_evalues} usages
           </span>
           <button
             className="px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
             onClick={() => onPlanifier(data.top_usages[0]?.code || 'FLEX_GENERAL')}
           >
-            Optimiser la flexibilite
+            Optimiser la flexibilité
           </button>
         </div>
       )}

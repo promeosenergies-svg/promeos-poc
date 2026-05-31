@@ -238,12 +238,12 @@ export default function BacsRegulatoryPanel({ siteId }) {
         </div>
       </div>
 
-      {/* Aide a la conformite banner */}
+      {/* Aide à la conformité banner */}
       <div className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-md">
         <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" />
         <p className="text-[11px] text-amber-700">
-          <span className="font-semibold">Aide a la conformite</span> — PROMEOS ne certifie pas la
-          conformite BACS. Ce panneau aide a preparer la revue interne.
+          <span className="font-semibold">Aide à la conformité</span> — PROMEOS ne certifie pas la
+          conformité BACS. Ce panneau aide a preparer la revue interne.
         </p>
       </div>
 
