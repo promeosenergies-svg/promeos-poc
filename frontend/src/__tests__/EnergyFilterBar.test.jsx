@@ -5,6 +5,7 @@
  * Couvre : rendu des 5 groupes, émission onChange, options conformes
  * au contrat API loadcurve, pas de calcul métier.
  */
+import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import EnergyFilterBar, {
@@ -94,5 +95,70 @@ describe('EnergyFilterBar', () => {
     expect(src).not.toMatch(/co2Factor\s*\*/);
     expect(src).not.toMatch(/Math\.sin\(/);
     expect(src).not.toMatch(/computeInsights\s*\(/);
+  });
+});
+
+describe('Hotfix Énergie 2026-05-31 — EnergyFilterBar rendu site sans fallback technique', () => {
+  afterEach(() => cleanup());
+
+  it('affiche le nom métier du site si fourni via scope.label', () => {
+    render(
+      <EnergyFilterBar
+        scope={{ kind: 'site', id: 1, label: 'Siège HELIOS Paris' }}
+        period="30d"
+        granularity="hour"
+        compare="none"
+        display="kwh"
+        onChange={() => {}}
+      />
+    );
+    const label = screen.getByTestId('filter-scope-label');
+    expect(label.textContent).toBe('Siège HELIOS Paris');
+    expect(label.textContent).not.toMatch(/^Site Site/);
+  });
+
+  it('affiche « Sélectionner un site » si aucun id ni label', () => {
+    render(
+      <EnergyFilterBar
+        scope={{}}
+        period="30d"
+        granularity="hour"
+        compare="none"
+        display="kwh"
+        onChange={() => {}}
+      />
+    );
+    expect(screen.getByTestId('filter-scope-label').textContent).toBe('Sélectionner un site');
+  });
+
+  it("affiche « Site sélectionné » si seul l'id est connu (fallback FR)", () => {
+    render(
+      <EnergyFilterBar
+        scope={{ kind: 'site', id: 42 }}
+        period="30d"
+        granularity="hour"
+        compare="none"
+        display="kwh"
+        onChange={() => {}}
+      />
+    );
+    expect(screen.getByTestId('filter-scope-label').textContent).toBe('Site sélectionné');
+  });
+
+  it('ne contient JAMAIS la chaîne « Site # » dans le rendu', () => {
+    render(
+      <EnergyFilterBar
+        scope={{ kind: 'site', id: 1 }}
+        period="30d"
+        granularity="hour"
+        compare="none"
+        display="kwh"
+        onChange={() => {}}
+      />
+    );
+    const label = screen.getByTestId('filter-scope-label');
+    expect(label.textContent).not.toMatch(/Site #/);
+    expect(label.textContent).not.toMatch(/#\d/);
+    expect(label.textContent).not.toContain('#');
   });
 });

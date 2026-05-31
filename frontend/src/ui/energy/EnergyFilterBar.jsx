@@ -13,7 +13,10 @@
  * - display       : 'kwh' | 'kw'
  * - onChange      : (next) => void
  */
+import React from 'react';
 import { Activity, Layers, RefreshCw } from 'lucide-react';
+// Hotfix Énergie 2026-05-31 — helper canonique formatSiteLabel.
+import { formatSiteLabel } from './scopeLabel';
 
 const PERIOD_OPTIONS = [
   { value: '7d', label: '7 jours' },
@@ -101,7 +104,10 @@ export default function EnergyFilterBar({
     >
       <FilterGroup label="Site" icon={Layers}>
         <span className="text-sm font-medium text-gray-800" data-testid="filter-scope-label">
-          {scope?.label || (scope?.id ? `#${scope.id}` : '—')}
+          {formatSiteLabel({
+            name: scope?.label,
+            id: scope?.id,
+          })}
         </span>
       </FilterGroup>
 
