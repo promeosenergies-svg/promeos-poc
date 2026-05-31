@@ -538,6 +538,21 @@ export const getEnergyLoadCurve = async (params = {}) => {
 };
 
 /**
+ * GET /api/energy/off-hours-analysis — analyse consommation hors horaires.
+ *
+ * Sprint Énergie P3.2. Le payload contient `schedule` (horaires
+ * déclarés ou `source=missing`), 4 KPI off-hours, `slots`,
+ * `top_off_hours`, `recommendations`. Aucun calcul métier côté FE.
+ *
+ * @param {object} params - { scope, scope_id, from, to, granularity, org_id }
+ * @returns {Promise<OffHoursAnalysisResponse>}
+ */
+export const getOffHoursAnalysis = async (params = {}) => {
+  const response = await api.get('/energy/off-hours-analysis', { params });
+  return response.data;
+};
+
+/**
  * GET /api/energy/week-profile — vue Semaine type (heatmap 7×24).
  *
  * @param {object} params - { scope, scope_id, days, org_id }

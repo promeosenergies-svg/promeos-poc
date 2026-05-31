@@ -479,6 +479,102 @@ class EnergyMarketExposureResponse(BaseModel):
     provenance: EnergyProvenance
 
 
+# ── Sprint Énergie P3.2 : /api/energy/off-hours-analysis ──────────────
+
+
+OpeningSource = Literal["declared", "default", "missing"]
+OffHoursStatus = Literal["sain", "vigilance", "critique"]
+
+
+class OpeningTimeRange(BaseModel):
+    """Plage horaire d'ouverture (HH:MM → HH:MM, tz Europe/Paris)."""
+
+    start_time: str = Field(..., description="Heure début (HH:MM)")
+    end_time: str = Field(..., description="Heure fin (HH:MM)")
+
+
+class OpeningDaySchedule(BaseModel):
+    """Grille d'ouverture d'un jour de semaine (0=Lundi, 6=Dimanche)."""
+
+    day_of_week: int = Field(..., ge=0, le=6)
+    label: str = Field(..., description="Libellé FR (Lundi, Mardi…)")
+    is_open: bool
+    ranges: list[OpeningTimeRange] = Field(default_factory=list)
+
+
+class OpeningSchedule(BaseModel):
+    """Horaires d'ouverture déclarés du site.
+
+    `source = "missing"` → aucun horaire renseigné → `weekly_schedule` vide,
+    consommateur doit afficher empty_state explicite.
+    """
+
+    timezone: str = Field(default="Europe/Paris")
+    source: OpeningSource = Field(default="missing")
+    weekly_schedule: list[OpeningDaySchedule] = Field(default_factory=list)
+    exceptions: list[str] = Field(default_factory=list, description="Jours fériés / fermetures (YYYY-MM-DD)")
+    provenance: EnergyProvenance
+
+
+class OffHoursSlot(BaseModel):
+    """Créneau hors horaires détecté (jour×heure, conso, status, raison)."""
+
+    day_of_week: int = Field(..., ge=0, le=6)
+    label: str
+    hour: int = Field(..., ge=0, le=23)
+    kwh: Optional[float] = None
+    kw_avg: Optional[float] = None
+    status: OffHoursStatus
+    reason: str = Field(..., description="Pourquoi ce créneau est hors horaires (FR métier)")
+    provenance: EnergyProvenance
+
+
+class OffHoursKpis(BaseModel):
+    """KPI agrégés analyse hors horaires."""
+
+    off_hours_kwh: Optional[EnergyKpi] = None
+    off_hours_share_pct: Optional[EnergyKpi] = None
+    weekend_off_hours_kwh: Optional[EnergyKpi] = None
+    night_baseload_kw: Optional[EnergyKpi] = None
+    estimated_cost_eur: Optional[EnergyKpi] = Field(
+        default=None,
+        description="Coût indicatif ; null si aucun prix disponible (jamais inventé)",
+    )
+
+
+class OffHoursRecommendation(BaseModel):
+    """Recommandation FR métier générée backend (jamais frontend)."""
+
+    title: str
+    description: str
+    severity: Literal["info", "warning", "critical"] = "info"
+    cta_label: Optional[str] = None
+    cta_to: Optional[str] = None
+    provenance: EnergyProvenance
+
+
+class OffHoursAnalysisResponse(BaseModel):
+    """Payload réponse `/api/energy/off-hours-analysis`.
+
+    Doctrine P3.2 :
+    - timezone Europe/Paris stricte
+    - aucune économie certaine — coût toujours indicatif
+    - empty_state explicite si horaires manquants ou série vide
+    - provenance racine + provenance par KPI + provenance par slot
+    """
+
+    scope: EnergyScope
+    period: EnergyPeriod
+    schedule: OpeningSchedule
+    kpis: OffHoursKpis = Field(default_factory=OffHoursKpis)
+    slots: list[OffHoursSlot] = Field(default_factory=list)
+    top_off_hours: list[OffHoursSlot] = Field(default_factory=list)
+    recommendations: list[OffHoursRecommendation] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    empty_state: Optional[str] = None
+    provenance: EnergyProvenance
+
+
 # ── Erreurs standardisées /api/energy/* ────────────────────────────────
 
 

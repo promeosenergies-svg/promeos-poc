@@ -66,6 +66,9 @@ METIER_PROPS = (
     # Sprint P3.1 — Profil moyen par jour + décomposition jour de semaine.
     "curves",
     "decomposition",
+    # Sprint P3.2 — analyse hors horaires (payload composite).
+    "payload",
+    "slots",
 )
 
 

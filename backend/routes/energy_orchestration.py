@@ -29,6 +29,8 @@ from schemas.energy_orchestration import (
     EnergyMarketExposureResponse,
     EnergySynthesisResponse,
     EnergyWeekProfileResponse,
+    # Sprint Énergie P3.2
+    OffHoursAnalysisResponse,
 )
 from services.energy_orchestration.cost_vs_contract import (
     CostVsContractError,
@@ -44,6 +46,7 @@ from services.energy_orchestration.errors import (
     CODE_PERIOD_INVALID,
     CODE_RANGE_INVALID,
     CODE_SCENARIO_INVALID,
+    CODE_SCOPE_ID_REQUIRED,
     CODE_SCOPE_INVALID,
     CODE_ZONE_UNKNOWN,
     energy_error,
@@ -55,6 +58,9 @@ from services.energy_orchestration.market_exposure import (
 from services.energy_orchestration.loadcurve import (
     LoadCurveError,
     build_loadcurve,
+)
+from services.energy_orchestration.opening_hours_analysis import (
+    build_off_hours_analysis,
 )
 from services.energy_orchestration.synthesis import build_synthesis
 from services.energy_orchestration.week_profile import (
@@ -390,4 +396,70 @@ def get_energy_market_exposure(
             hint=exc.hint,
             request=request,
             status_code=getattr(exc, "http_code", 400),
+        ) from exc
+
+
+# ── GET /api/energy/off-hours-analysis (Sprint P3.2) ──────────────────
+
+
+@router.get("/off-hours-analysis", response_model=OffHoursAnalysisResponse)
+def get_energy_off_hours_analysis(
+    request: Request,
+    scope: str = Query("site", description="site | meter"),
+    scope_id: Optional[int] = Query(None),
+    from_: datetime = Query(..., alias="from", description="ISO 8601 début"),
+    to: datetime = Query(..., description="ISO 8601 fin"),
+    granularity: str = Query("hour", description="15min | 30min | hour | day"),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Analyse hors horaires — sprint Énergie P3.2.
+
+    Compare les horaires d'ouverture déclarés (`SiteOperatingSchedule`)
+    à la consommation mesurée pour identifier les créneaux hors horaires,
+    + KPI agrégés, + recommandations FR métier.
+
+    Empty state si horaires non renseignés ou série vide.
+    """
+    if scope not in ("site", "meter"):
+        raise energy_error(
+            code=CODE_SCOPE_INVALID,
+            message=f"scope='{scope}' invalide pour off-hours-analysis",
+            hint="valeurs autorisées : site | meter",
+            request=request,
+        )
+    if scope_id is None:
+        raise energy_error(
+            code=CODE_SCOPE_ID_REQUIRED,
+            message="scope_id obligatoire pour off-hours-analysis",
+            hint="préciser un identifiant de site ou de compteur",
+            request=request,
+        )
+
+    resolved_org_id = _resolve_org_id(request, auth, org_id)
+
+    try:
+        return build_off_hours_analysis(
+            db,
+            scope_kind=scope,
+            scope_id=scope_id,
+            org_id=resolved_org_id,
+            from_dt=from_,
+            to_dt=to,
+            granularity=granularity,
+        )
+    except LoadCurveError as exc:
+        msg = exc.message.lower()
+        if "refusée" in msg or ("granul" in msg and "(max" in exc.message):
+            code = CODE_GRANULARITY_TOO_FINE
+        elif "inconnue" in msg or "granularity '" in msg:
+            code = CODE_GRANULARITY_UNKNOWN
+        else:
+            code = CODE_RANGE_INVALID
+        raise energy_error(
+            code=code,
+            message=exc.message,
+            hint=exc.hint,
+            request=request,
         ) from exc

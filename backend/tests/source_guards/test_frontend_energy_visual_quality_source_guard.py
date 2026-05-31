@@ -57,6 +57,9 @@ ENERGY_FILES_REL = [
     # Sprint P3.1 — Profil moyen par jour + Répartition par jour.
     "ui/energy/WeekdayOverlayChart.jsx",
     "ui/energy/WeekdayDecompositionBar.jsx",
+    # Sprint P3.2 — Consommation hors horaires.
+    "ui/energy/OffHoursAnalysisCard.jsx",
+    "ui/energy/OffHoursSlotsTable.jsx",
     "ui/energy/scopeLabel.js",
 ]
 
@@ -265,6 +268,46 @@ class TestEnergyVisualQualityP2_5:
             assert re.search(r'data-testid="weekday-(overlay|decomposition)-provenance"', content), (
                 f"{rel} doit exposer un data-testid de provenance visible (P3.1)."
             )
+
+    def test_no_english_off_hours_jargon_p3_2(self):
+        """Sprint P3.2 — wording anglais « Business hours » / « Off hours »
+        interdit en JSX rendu (microcopy FR exclusif).
+        """
+        violations: list[str] = []
+        forbidden_patterns = [
+            (r"['\"`>]\s*Business hours", "Business hours"),
+            (r"['\"`>]\s*Off hours", "Off hours"),
+            (r"['\"`>]\s*Off-hours", "Off-hours"),
+            (r"['\"`>]\s*Opening hours", "Opening hours"),
+        ]
+        for rel, code in _iter_energy_files():
+            for pattern, label in forbidden_patterns:
+                if re.search(pattern, code):
+                    violations.append(f"  {rel} → wording anglais « {label} »")
+        if violations:
+            pytest.fail(
+                "\n🔴 P3.2 — Wording anglais détecté en JSX rendu :\n\n"
+                + "\n".join(violations)
+                + "\n\nUtiliser « Consommation hors horaires » / "
+                "« horaires déclarés » (cf. brief Énergie P3.2).\n"
+            )
+
+    def test_off_hours_components_render_provenance_p3_2(self):
+        """Sprint P3.2 — OffHoursAnalysisCard + OffHoursSlotsTable exposent provenance."""
+        for rel in (
+            "ui/energy/OffHoursAnalysisCard.jsx",
+            "ui/energy/OffHoursSlotsTable.jsx",
+        ):
+            path = FRONTEND / rel
+            assert path.exists(), f"Composant P3.2 manquant : {rel}"
+            content = path.read_text(encoding="utf-8")
+            assert "provenance" in content, (
+                f"{rel} doit lire `provenance` du payload backend (P3.2 doctrine zéro calcul)."
+            )
+            assert re.search(
+                r"off-hours-(?:recommendation|slot)-provenance",
+                content,
+            ), f"{rel} doit exposer un data-testid de provenance visible (P3.2)."
 
     def test_french_microcopy_emptystates(self):
         """Les empty states sont en FR (pas de fallback anglais)."""

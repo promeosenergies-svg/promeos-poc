@@ -368,3 +368,29 @@ class TestProvenanceCoveragePolishP1S7:
 
         fields = EnergyMarketContext.model_fields
         assert "provenance" in fields and fields["provenance"].is_required()
+
+    # ── Sprint Énergie P3.2 — off-hours-analysis ─────────────────────
+
+    def test_off_hours_analysis_response_root_provenance_required(self):
+        from schemas.energy_orchestration import OffHoursAnalysisResponse
+
+        fields = OffHoursAnalysisResponse.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_off_hours_slot_has_provenance(self):
+        from schemas.energy_orchestration import OffHoursSlot
+
+        fields = OffHoursSlot.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_off_hours_recommendation_has_provenance(self):
+        from schemas.energy_orchestration import OffHoursRecommendation
+
+        fields = OffHoursRecommendation.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()
+
+    def test_opening_schedule_has_provenance(self):
+        from schemas.energy_orchestration import OpeningSchedule
+
+        fields = OpeningSchedule.model_fields
+        assert "provenance" in fields and fields["provenance"].is_required()

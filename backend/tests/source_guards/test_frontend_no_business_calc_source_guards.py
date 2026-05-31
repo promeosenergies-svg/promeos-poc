@@ -101,6 +101,17 @@ FORBIDDEN_PATTERNS: list[tuple[re.Pattern, str]] = [
         re.compile(r"\.reduce\s*\(\s*\([\w,\s]*\)\s*=>\s*\w+\s*\+\s*\(?\s*\w+\.estimated_(impact|loss)_eur"),
         "agrégation impact financier frontend (reduce sur estimated_*_eur) — doit être pré-calculé backend",
     ),
+    # 7. Sprint P3.2 — calcul off_hours_share / off_hours_kwh frontend
+    (
+        re.compile(r"off_hours_share(?:_pct)?\s*=\s*\w+\s*/\s*\w+\s*\*"),
+        "calcul off_hours_share frontend — doit être opening_hours_analysis._compute_kpis backend",
+    ),
+    (
+        re.compile(
+            r"off_hours_kwh\s*=\s*\w+\.reduce|\.reduce\s*\(\s*\([\w,\s]*\)\s*=>\s*\w+\s*\+\s*\w+\.kwh.*off_hours"
+        ),
+        "agrégation off_hours_kwh frontend — doit être opening_hours_analysis._compute_kpis backend",
+    ),
 ]
 
 
