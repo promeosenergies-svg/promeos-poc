@@ -44,6 +44,15 @@ async function login(page) {
   if (_cachedToken) {
     await page.evaluate((t) => localStorage.setItem('promeos_token', t), _cachedToken);
   }
+  // Force un scope site sélectionné (org=1, site=1) pour P3.1 — sinon
+  // la vue affiche « Aucun site sélectionné ». Le shape correspond à
+  // `STORAGE_KEY = 'promeos_scope'` dans ScopeContext.
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'promeos_scope',
+      JSON.stringify({ orgId: 1, entiteId: null, portefeuilleId: null, siteId: 1 })
+    );
+  });
   await page.goto(`${FRONTEND_URL}/cockpit`);
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15_000 });
 }
@@ -56,29 +65,46 @@ test.describe('P3.1 — Profil moyen par jour + Pics de puissance desktop 1440',
   test('01 — sections P3.1 visibles sous /consommations/courbe', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await login(page);
-    await page.goto(`${FRONTEND_URL}/consommations/courbe`, { waitUntil: 'load' });
+    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=90d&granularity=day`, { waitUntil: 'load' });
     await page.waitForTimeout(3_000);
 
     const file = path.join(OUT_DIR, '01_loadcurve_weekday_default_1440.png');
     await page.screenshot({ path: file, fullPage: true });
   });
 
-  test('02 — microcopy FR métier P3.1 (« Profil moyen par jour », « Pics de puissance »)', async ({ page }) => {
+  test('02 — sections P3.1 visibles : « Pics de puissance » + « Profil moyen par jour » + 7 jours', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await login(page);
-    await page.goto(`${FRONTEND_URL}/consommations/courbe`, { waitUntil: 'load' });
+    // period=90d garantit que le seed démo expose des données mesurées
+    // pour le site 1 (cf. live curl P3.1).
+    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=90d&granularity=day`, { waitUntil: 'load' });
     await page.waitForTimeout(4_000);
 
-    const body = await page.locator('body').textContent();
+    const body = (await page.locator('body').textContent()) || '';
 
-    // Section P3.1 — Profil moyen par jour (peut être null si payload vide ;
-    // sinon doit apparaître). On vérifie au minimum que l'app n'expose
-    // PAS l'ancien wording « Top pics indisponible ».
-    expect(body || '').not.toContain('Top pics indisponible');
-    expect(body || '').not.toContain('Top pics');
+    // Sections P3.1 visibles
+    expect(body).toContain('Pics de puissance');
+    expect(body).toContain('Profil moyen par jour');
+    expect(body).toContain('Répartition par jour');
 
-    // Pas d'identifiant technique « Site #<num> » exposé.
-    expect((body || '').match(/Site #\d+/)?.length ?? 0).toBe(0);
+    // 7 jours Lun → Dim affichés (issue de weekday_decomposition / overlay)
+    for (const day of ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']) {
+      expect(body).toContain(day);
+    }
+
+    // Plus aucun wording « Top pics »
+    expect(body).not.toContain('Top pics indisponible');
+    expect(body).not.toContain('Top pics');
+
+    // Pas d'identifiant technique « Site #<num> »
+    expect(body.match(/Site #\d+/)?.length ?? 0).toBe(0);
+
+    // Aucune erreur rouge ENERGY_* visible
+    expect(body).not.toContain('ENERGY_GRANULARITY_TOO_FINE');
+    expect(body).not.toContain('ENERGY_SCOPE_INVALID');
+
+    // Cross-link Centre d'action présent
+    expect(body).toContain("Créer une action d'analyse");
   });
 
   test('03 — rail Énergie inchangé après P3.1', async ({ page }) => {
@@ -96,9 +122,12 @@ test.describe('P3.1 — Profil moyen par jour + Pics de puissance desktop 1440',
   });
 
   test('04 — capture pleine page large 1440 documentaire', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
+    // Viewport vertical large pour capturer toutes les sections P3.1
+    // (KPI + chart + Pics + Profil moyen + Répartition + cross-link)
+    // dans une seule capture documentaire.
+    await page.setViewportSize({ width: 1440, height: 2400 });
     await login(page);
-    await page.goto(`${FRONTEND_URL}/consommations/courbe`, { waitUntil: 'load' });
+    await page.goto(`${FRONTEND_URL}/consommations/courbe?period=90d&granularity=day`, { waitUntil: 'load' });
     await page.waitForTimeout(4_000);
 
     const file = path.join(OUT_DIR, '04_loadcurve_weekday_doc_1440.png');

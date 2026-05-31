@@ -1,0 +1,16 @@
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: '.',
+  testMatch: /p3_loadcurve_weekday_profile\.spec\.js$/,
+  timeout: 90_000,
+  retries: 0,
+  reporter: [['list']],
+  use: {
+    baseURL: 'http://127.0.0.1:5175',
+    headless: true,
+    viewport: { width: 1440, height: 900 },
+    ignoreHTTPSErrors: true,
+  },
+  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
+});
