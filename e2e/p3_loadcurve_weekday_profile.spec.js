@@ -105,6 +105,13 @@ test.describe('P3.1 — Profil moyen par jour + Pics de puissance desktop 1440',
 
     // Cross-link Centre d'action présent
     expect(body).toContain("Créer une action d'analyse");
+
+    // Hotfix P3.1 — au moins 7 courbes SVG Recharts dans le LineChart
+    // « Profil moyen par jour » (sinon les courbes étaient invisibles).
+    const chart = page.getByTestId('weekday-overlay-chart');
+    await expect(chart).toBeVisible({ timeout: 10_000 });
+    const curveCount = await chart.locator('.recharts-line-curve').count();
+    expect(curveCount).toBeGreaterThanOrEqual(7);
   });
 
   test('03 — rail Énergie inchangé après P3.1', async ({ page }) => {

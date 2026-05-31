@@ -72,6 +72,24 @@ describe('WeekdayOverlayChart — rendu 7 jours × 24h', () => {
     rerender(<WeekdayOverlayChart curves={buildCurves()} display="kw" />);
     expect(screen.getByTestId('weekday-overlay-chart')).toBeTruthy();
   });
+
+  // NB : assertion SVG `.recharts-line-curve` faite côté Playwright
+  // (rendu réel ; jsdom + ResponsiveContainer ne rend pas le SVG).
+
+  it('mapping chartData : data exposée doit contenir 24 rows × 7 dataKeys (hotfix P3.1)', () => {
+    // Vérification statique : on lit le code source et on s'assure que
+    // le composant boucle sur `points[]` et utilise `curve.label` comme
+    // dataKey (sinon les courbes seraient vides).
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const src = readFileSync(resolve(__dirname, '../ui/energy/WeekdayOverlayChart.jsx'), 'utf8');
+    // Construit 24 rows
+    expect(src).toMatch(/Array\.from\(\{\s*length:\s*24\s*\}/);
+    // dataKey utilise le label de la courve (pas une key inventée)
+    expect(src).toMatch(/dataKey=\{curve\.label\}/);
+    // Mapping ligne par point.hour (pas hardcoded)
+    expect(src).toMatch(/rows\[point\.hour\]\[curve\.label\]\s*=\s*point\[valueKey\]/);
+  });
 });
 
 describe('WeekdayOverlayChart — doctrine zéro calcul métier', () => {

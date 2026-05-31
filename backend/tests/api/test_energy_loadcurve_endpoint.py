@@ -406,6 +406,85 @@ class TestLoadCurveP3_1WeekdayOverlay:
         )
         assert _compute_weekday_overlay([], period) == []
 
+    def test_weekday_overlay_spread_over_24h_when_granularity_day(self, db_empty):
+        """Hotfix P3.1 : granularité=day → kw_avg étalé sur les 24h du step.
+
+        Cause racine : avec granularity=day, chaque point timeseries est
+        indexé à minuit Europe/Paris → bucket (weekday, 0) seul rempli,
+        23 autres heures à None → courbes Recharts invisibles.
+
+        Correction : pour granularity in (day/week/month/year), le helper
+        étale `kwh/24` et `kw_avg` du point sur les 24 heures du step.
+        Toutes les heures 0-23 doivent avoir avg_kwh non None et > 0.
+        """
+        from services.energy_orchestration.loadcurve import _compute_weekday_overlay
+        from schemas.energy_orchestration import EnergyPeriod, EnergyLoadCurvePoint
+
+        period = EnergyPeriod(
+            label="custom",
+            start=datetime(2026, 5, 1, tzinfo=TZ_PARIS),
+            end=datetime(2026, 5, 15, tzinfo=TZ_PARIS),
+            days=14,
+            timezone="Europe/Paris",
+        )
+        # 14 jours, 1 point/jour à minuit Paris — simule granularity=day
+        series = [
+            EnergyLoadCurvePoint(
+                timestamp=datetime(2026, 5, 4 + d, 0, 0, tzinfo=TZ_PARIS),
+                kwh=8400.0,
+                kw_avg=350.0,
+                quality_status="measured",
+            )
+            for d in range(14)
+        ]
+
+        # Sans hotfix (granularity par défaut "hour") : 1 seule heure non-None
+        curves_hour = _compute_weekday_overlay(series, period, granularity="hour")
+        non_none_hour = sum(1 for c in curves_hour for p in c.points if p.avg_kwh is not None)
+        assert non_none_hour <= 7, "fallback hour ne doit garder qu'un point/jour"
+
+        # Avec hotfix (granularity="day") : 24 heures non-None pour chaque jour
+        curves_day = _compute_weekday_overlay(series, period, granularity="day")
+        for curve in curves_day:
+            non_none = [p for p in curve.points if p.avg_kwh is not None]
+            assert len(non_none) == 24, f"{curve.label} doit exposer 24h non-None (got {len(non_none)})"
+            # avg_kwh par heure cohérent = kwh_jour / 24
+            for p in curve.points:
+                assert p.avg_kwh is not None
+                assert abs(p.avg_kwh - 8400.0 / 24) < 0.1
+                # kw_avg du point conservé (puissance moyenne du jour)
+                assert p.avg_kw is not None and abs(p.avg_kw - 350.0) < 0.1
+
+    def test_weekday_overlay_hour_granularity_unchanged_by_hotfix(self, db_empty):
+        """Hotfix non régressif : granularity=hour conserve comportement P3.1."""
+        from services.energy_orchestration.loadcurve import _compute_weekday_overlay
+        from schemas.energy_orchestration import EnergyPeriod, EnergyLoadCurvePoint
+
+        period = EnergyPeriod(
+            label="custom",
+            start=datetime(2026, 5, 1, tzinfo=TZ_PARIS),
+            end=datetime(2026, 5, 15, tzinfo=TZ_PARIS),
+            days=14,
+            timezone="Europe/Paris",
+        )
+        # 1 point/heure pendant 14 jours (granularity=hour réel)
+        series = []
+        for d in range(14):
+            for h in range(24):
+                series.append(
+                    EnergyLoadCurvePoint(
+                        timestamp=datetime(2026, 5, 4 + d, h, 0, tzinfo=TZ_PARIS),
+                        kwh=350.0,
+                        kw_avg=350.0,
+                        quality_status="measured",
+                    )
+                )
+        curves = _compute_weekday_overlay(series, period, granularity="hour")
+        for curve in curves:
+            assert len(curve.points) == 24
+            for point in curve.points:
+                assert point.avg_kwh is not None and abs(point.avg_kwh - 350.0) < 0.1
+
 
 class TestLoadCurveP3_1WeekdayDecomposition:
     """Critère 6-7 : 7 lignes décomposition + weekend_share_pct backend."""

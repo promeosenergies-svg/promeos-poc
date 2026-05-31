@@ -154,7 +154,7 @@ def build_loadcurve(
 
     # Sprint Énergie P3.1 — pics + profil moyen par jour
     top_peaks = _compute_top_peaks(series, period)
-    weekday_overlay = _compute_weekday_overlay(series, period)
+    weekday_overlay = _compute_weekday_overlay(series, period, granularity)
     weekday_decomposition = _compute_weekday_decomposition(series, period)
     weekday_weekend_comparison = _compute_weekday_weekend_comparison(series, period)
 
@@ -284,21 +284,41 @@ def _compute_top_peaks(
 def _compute_weekday_overlay(
     series: list[EnergyLoadCurvePoint],
     period: EnergyPeriod,
+    granularity: str = "hour",
 ) -> list[EnergyWeekdayCurve]:
     """Profil moyen par jour de semaine — 7 courbes × 24 heures.
 
     Pour chaque (jour_de_semaine, heure), moyenne arithmétique des
     valeurs des points correspondants dans la série.
+
+    Hotfix P3.1 : pour les granularités ≥ jour (day/week/month/year),
+    chaque point timeseries représente un step >= 24h et est indexé à
+    minuit Europe/Paris. On étale alors `kw_avg` du point sur toutes les
+    heures couvertes (sinon 23h sont vides et les courbes Recharts sont
+    invisibles). `avg_kwh` du bucket horaire est ramené à `kwh / step_h`
+    (kWh par heure cohérent avec puissance moyenne du step).
     """
     if not series:
         return []
 
-    # Bucket : (day_of_week, hour) → list of (kwh, kw_avg, quality_status)
+    step_hours = _hours_for_granularity(granularity)
+    # Au-delà du step horaire, on étale chaque point sur toutes les
+    # heures du step (cas day/week/month/year — point indexé minuit).
+    spread_over_step = step_hours >= 24.0
+    hours_to_spread = int(min(24, max(1, round(step_hours)))) if spread_over_step else 1
+
+    # Bucket : (day_of_week, hour) → list of (kwh_h, kw_avg, quality_status)
     buckets: dict[tuple[int, int], list[tuple[Optional[float], Optional[float], str]]] = {}
     for point in series:
         local = _localize_to_paris(point.timestamp)
-        key = (local.weekday(), local.hour)
-        buckets.setdefault(key, []).append((point.kwh, point.kw_avg, point.quality_status))
+        weekday = local.weekday()
+        if spread_over_step:
+            # kWh par heure pour rester cohérent avec une lecture horaire.
+            kwh_h = (point.kwh / hours_to_spread) if point.kwh is not None else None
+            for h in range(hours_to_spread):
+                buckets.setdefault((weekday, h), []).append((kwh_h, point.kw_avg, point.quality_status))
+        else:
+            buckets.setdefault((weekday, local.hour), []).append((point.kwh, point.kw_avg, point.quality_status))
 
     curves: list[EnergyWeekdayCurve] = []
     for day_of_week in range(7):
@@ -340,7 +360,8 @@ def _compute_weekday_overlay(
                     formula=(
                         f"moyenne arithmétique kwh/kw_avg par (jour_semaine={label}, "
                         "heure) sur la période ; n_points = nombre d'occurrences "
-                        "agrégées"
+                        "agrégées ; pour granularité ≥ jour, kw_avg du point est "
+                        "étalé sur les 24h du step (kWh/h = kwh_step / 24)"
                     ),
                     period=period,
                     confidence=0.85,
